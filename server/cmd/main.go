@@ -11,11 +11,12 @@ import (
 
 	"github.com/function09/order_management_system/server/config"
 	"github.com/function09/order_management_system/server/db"
+	"github.com/function09/order_management_system/server/internal/auth"
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load("../.env"); err != nil {
+	if err := godotenv.Load("../../.env"); err != nil {
 		log.Fatal(err)
 	}
 
@@ -30,6 +31,11 @@ func main() {
 		Handler: mux,
 		Addr:    cfg.Port,
 	}
+
+	store := &auth.Store{DB: database}
+
+	mux.HandleFunc("POST /auth/register", auth.RegisterUserHandler(store))
+	mux.HandleFunc("POST /auth/login", auth.LoginUserHandler(store, cfg.JWTSecret))
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
