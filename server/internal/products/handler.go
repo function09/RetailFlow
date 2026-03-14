@@ -9,6 +9,7 @@ import (
 
 type ProductInput struct {
 	Name       string `json:"name"`
+	SKU        string `json:"sku"`
 	Price      int    `json:"price"`
 	Quantity   int    `json:"quantity"`
 	CategoryID int    `json:"category_id"`

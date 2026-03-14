@@ -1,0 +1,2 @@
+ALTER TABLE products DROP CONSTRAINT products_name_key;
+ALTER TABLE products ADD COLUMN sku TEXT UNIQUE;

@@ -7,6 +7,7 @@ import (
 
 type Product struct {
 	ID         int
+	SKU        string
 	Name       string
 	Price      int
 	Quantity   int
@@ -26,7 +27,7 @@ type ProductStore interface {
 }
 
 func (s *Store) GetAllProducts(ctx context.Context) ([]*Product, error) {
-	rows, err := s.QueryContext(ctx, "SELECT id, name, price, quantity, category_id FROM products")
+	rows, err := s.QueryContext(ctx, "SELECT id, sku, name, price, quantity, category_id FROM products")
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (s *Store) GetAllProducts(ctx context.Context) ([]*Product, error) {
 	for rows.Next() {
 		var prod Product
 
-		if err := rows.Scan(&prod.ID, &prod.Name, &prod.Price, &prod.Quantity, &prod.CategoryID); err != nil {
+		if err := rows.Scan(&prod.ID, &prod.SKU, &prod.Name, &prod.Price, &prod.Quantity, &prod.CategoryID); err != nil {
 			return products, err
 		}
 		products = append(products, &prod)
@@ -48,14 +49,14 @@ func (s *Store) GetAllProducts(ctx context.Context) ([]*Product, error) {
 
 func (s *Store) GetProduct(ctx context.Context, id int) (*Product, error) {
 	var product Product
-	if err := s.QueryRowContext(ctx, "SELECT id, name, price, quantity, category_id FROM products WHERE id = $1", id).Scan(&product.ID, &product.Name, &product.Price, &product.Quantity, &product.CategoryID); err != nil {
+	if err := s.QueryRowContext(ctx, "SELECT id, sku, name, price, quantity, category_id FROM products WHERE id = $1", id).Scan(&product.ID, &product.SKU, &product.Name, &product.Price, &product.Quantity, &product.CategoryID); err != nil {
 		return nil, err
 	}
 	return &product, nil
 }
 
 func (s *Store) AddProduct(ctx context.Context, p *Product) error {
-	_, err := s.ExecContext(ctx, "INSERT INTO products (name, price, quantity, category_id) VALUES ($1, $2, $3, $4)", p.Name, p.Price, p.Quantity, p.CategoryID)
+	_, err := s.ExecContext(ctx, "INSERT INTO products (name, price, quantity, category_id, sku) VALUES ($1, $2, $3, $4, $5)", p.Name, p.Price, p.Quantity, p.CategoryID, p.SKU)
 	if err != nil {
 		return err
 	}
@@ -73,7 +74,7 @@ func (s *Store) RemoveProduct(ctx context.Context, p *Product) error {
 }
 
 func (s *Store) UpdateProduct(ctx context.Context, p *Product) error {
-	_, err := s.ExecContext(ctx, "UPDATE products SET name = $1, price = $2, quantity = $3, category_id = $4 WHERE id = $5", p.Name, p.Price, p.Quantity, p.CategoryID, p.ID)
+	_, err := s.ExecContext(ctx, "UPDATE products SET name = $1, price = $2, quantity = $3, category_id = $4, sku = $5 WHERE id = $6", p.Name, p.Price, p.Quantity, p.CategoryID, p.SKU, p.ID)
 
 	if err != nil {
 		return err
