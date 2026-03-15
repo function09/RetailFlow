@@ -19,14 +19,14 @@ type Store struct {
 }
 
 type ProductStore interface {
-	GetAllProducts(ctx context.Context) ([]*Product, error)
+	GetAllProducts(ctx context.Context, limit, offset int) ([]*Product, error)
 	GetProduct(ctx context.Context, id int) (*Product, error)
 	AddProduct(ctx context.Context, p *Product) error
 	RemoveProduct(ctx context.Context, p *Product) error
 	UpdateProduct(ctx context.Context, p *Product) error
 }
 
-func (s *Store) GetAllProducts(ctx context.Context) ([]*Product, error) {
+func (s *Store) GetAllProducts(ctx context.Context, limit, offset int) ([]*Product, error) {
 	rows, err := s.QueryContext(ctx, "SELECT id, sku, name, price, quantity, category_id FROM products")
 	if err != nil {
 		return nil, err

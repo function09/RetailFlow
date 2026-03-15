@@ -10,15 +10,15 @@ import (
 )
 
 type FakeStore struct {
-	GetAllProductsFn func(ctx context.Context) ([]*Product, error)
+	GetAllProductsFn func(ctx context.Context, limit, offset int) ([]*Product, error)
 	GetProductFn     func(ctx context.Context, id int) (*Product, error)
 	AddProductFn     func(ctx context.Context, p *Product) error
 	UpdateProductFn  func(ctx context.Context, p *Product) error
 	RemoveProductFn  func(ctx context.Context, p *Product) error
 }
 
-func (s *FakeStore) GetAllProducts(ctx context.Context) ([]*Product, error) {
-	return s.GetAllProductsFn(ctx)
+func (s *FakeStore) GetAllProducts(ctx context.Context, limit, offset int) ([]*Product, error) {
+	return s.GetAllProductsFn(ctx, limit, offset)
 }
 
 func (s *FakeStore) GetProduct(ctx context.Context, id int) (*Product, error) {
@@ -43,13 +43,13 @@ func TestGetAllProducts(t *testing.T) {
 		store ProductStore
 		want  int
 	}{
-		{"Returns a list of products", &FakeStore{GetAllProductsFn: func(ctx context.Context) ([]*Product, error) {
+		{"Returns a list of products", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit, offset int) ([]*Product, error) {
 			return []*Product{{ID: 1, Name: "Pepsi", Price: 199, Quantity: 2, CategoryID: 1}, {ID: 1, Name: "Coke", Price: 299, Quantity: 2, CategoryID: 1}}, nil
 		}}, 200},
-		{"Returns an empty list of products", &FakeStore{GetAllProductsFn: func(ctx context.Context) ([]*Product, error) {
+		{"Returns an empty list of products", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit, offset int) ([]*Product, error) {
 			return []*Product{}, nil
 		}}, 200},
-		{"DB call fails", &FakeStore{GetAllProductsFn: func(ctx context.Context) ([]*Product, error) {
+		{"DB call fails", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit, offset int) ([]*Product, error) {
 			return nil, errors.New("error db call failed")
 		}}, 500},
 	}

@@ -15,7 +15,7 @@ type ProductInput struct {
 	CategoryID int    `json:"category_id"`
 }
 
-func GetAllProductsHandler(store ProductStore) http.HandlerFunc {
+func GetAllProductsHandler(store ProductStore, limit, offset int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		products, err := store.GetAllProducts(r.Context())
 
