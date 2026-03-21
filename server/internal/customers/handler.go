@@ -4,13 +4,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"net/mail"
 	"strconv"
 )
 
 type CustomerInput struct {
+	ID        int    `json:"id"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
+	IsActive  bool   `json:"isActive"`
 }
 
 func GetAllCustomersHandler(store CustomerStore) http.HandlerFunc {
@@ -78,7 +81,18 @@ func CreateCustomerHandler(store CustomerStore) http.HandlerFunc {
 			return
 		}
 
-		id, err := store.CreateCustomer(r.Context(), &Customer{FirstName: customer.FirstName, LastName: customer.LastName, Email: customer.Email})
+		if customer.Email == "" {
+			http.Error(w, "No email provided", http.StatusBadRequest)
+			return
+		}
+
+		e, err := mail.ParseAddress(customer.Email)
+
+		if err != nil {
+			http.Error(w, "Invalid email format", http.StatusBadRequest)
+			return
+		}
+		id, err := store.CreateCustomer(r.Context(), &Customer{FirstName: customer.FirstName, LastName: customer.LastName, Email: e.Address})
 
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -87,5 +101,69 @@ func CreateCustomerHandler(store CustomerStore) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(id)
+	}
+}
+func UpdateCustomerHandler(store CustomerStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var customer *CustomerInput
+
+		if err := json.NewDecoder(r.Body).Decode(&customer); err != nil {
+			http.Error(w, "Malformed  JSON", http.StatusBadRequest)
+			return
+		}
+
+		pathValue := r.PathValue("id")
+		pathValueInt, err := strconv.Atoi(pathValue)
+
+		if err != nil {
+			http.Error(w, "Invalid path value", http.StatusBadRequest)
+			return
+		}
+
+		if customer.Email == "" {
+			http.Error(w, "No email provided", http.StatusBadRequest)
+			return
+		}
+
+		e, err := mail.ParseAddress(customer.Email)
+
+		if err != nil {
+			http.Error(w, "Invalid email format", http.StatusBadRequest)
+			return
+		}
+
+		if err := store.UpdateCustomer(r.Context(), &Customer{ID: pathValueInt, FirstName: customer.FirstName, LastName: customer.LastName, Email: e.Address}); err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, "Customer not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func RemoveCustomerHandler(store CustomerStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		pathValue := r.PathValue("id")
+		pathValueInt, err := strconv.Atoi(pathValue)
+
+		if err != nil {
+			http.Error(w, "Invalid path value", http.StatusBadRequest)
+			return
+		}
+		if err := store.RemoveCustomer(r.Context(), pathValueInt); err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, "Customer not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }

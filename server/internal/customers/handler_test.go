@@ -132,6 +132,12 @@ func TestCreateCustomer(t *testing.T) {
 		{"DB Error", &FakeStore{CreateCustomerFn: func(ctx context.Context, cst *Customer) (int, error) {
 			return 0, errors.New("Internal server error")
 		}}, `{"firstName":"John", "lastName":"Doe", "email":"johndoe@mail.com"}`, 500},
+		{"Missing/empty email", &FakeStore{CreateCustomerFn: func(ctx context.Context, cst *Customer) (int, error) {
+			return 0, nil
+		}}, `{"firstName":"John", "lastName":"Doe"}`, 400},
+		{"Invalid email format", &FakeStore{CreateCustomerFn: func(ctx context.Context, cst *Customer) (int, error) {
+			return 0, nil
+		}}, `{"firstName":"John", "lastName":"Doe", "email":"johndoe"}`, 400},
 	}
 
 	for _, e := range tests {
@@ -148,5 +154,96 @@ func TestCreateCustomer(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestUpdateCustomer(t *testing.T) {
+	var tests = []struct {
+		name      string
+		store     CustomerStore
+		pathValue string
+		body      string
+		want      int
+	}{
+		{"successfully updates a customer", &FakeStore{UpdateCustomerFn: func(ctx context.Context, cst *Customer) error {
+			return nil
+		}}, "1", `{"firstName":"John", "lastName":"Doe", "email":"johndoe@mail.com" ,"isActive":true}`, 200},
+		{"Malformed JSON", &FakeStore{UpdateCustomerFn: func(ctx context.Context, cst *Customer) error {
+			return nil
+		}}, "1", `{"firstName":, "lastName":"Doe", "email":"johndoe@mail.com","isActive":true }`, 400},
+		{"Invalid ID", &FakeStore{UpdateCustomerFn: func(ctx context.Context, cst *Customer) error {
+			return nil
+		}}, "abc", `{"firstName":, "lastName":"Doe", "email":"johndoe@mail.com", "isActive":true}`, 400},
+		{"Customer not found or inactive", &FakeStore{UpdateCustomerFn: func(ctx context.Context, cst *Customer) error {
+			return sql.ErrNoRows
+		}}, "2", `{"firstName":"John", "lastName":"Doe", "email":"johndoe@mail.com", "isActive":false}`, 404},
+		{"DB Error", &FakeStore{UpdateCustomerFn: func(ctx context.Context, cst *Customer) error {
+			return errors.New("Internal server error")
+		}}, "1", `{"firstName":"John", "lastName":"Doe", "email":"johndoe@mail.com", "isActive":true}`, 500},
+		{"Missing/empty email", &FakeStore{UpdateCustomerFn: func(ctx context.Context, cst *Customer) error {
+			return nil
+		}}, "1", `{"firstName":"John", "lastName":"Doe", "isActive":true}`, 400},
+		{"Invalid email format", &FakeStore{UpdateCustomerFn: func(ctx context.Context, cst *Customer) error {
+			return nil
+		}}, "1", `{"firstName":"John", "lastName":"Doe", "email":"johndoe", "isActive":true}`, 400},
+	}
+
+	for _, e := range tests {
+		t.Run(e.name, func(t *testing.T) {
+			body := strings.NewReader(e.body)
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest("PUT", "/customer/{id}", body)
+
+			req.SetPathValue("id", e.pathValue)
+
+			handler := UpdateCustomerHandler(e.store)
+			handler(w, req)
+
+			if w.Code != e.want {
+				t.Errorf("Got %d want %d", w.Code, e.want)
+			}
+		})
+	}
+}
+
+func TestRemoveCustomer(t *testing.T) {
+	var tests = []struct {
+		name      string
+		store     CustomerStore
+		pathValue string
+		want      int
+	}{
+		{
+			"Customer status changed to inactive", &FakeStore{RemoveCustomerFn: func(ctx context.Context, id int) error {
+				return nil
+			}}, "1", 200,
+		}, {
+			"Invalid/No ID", &FakeStore{RemoveCustomerFn: func(ctx context.Context, id int) error {
+				return nil
+			}}, "abc", 400,
+		}, {
+			"Customer not found", &FakeStore{RemoveCustomerFn: func(ctx context.Context, id int) error {
+				return sql.ErrNoRows
+			}}, "2", 404,
+		}, {
+			"DB Error", &FakeStore{RemoveCustomerFn: func(ctx context.Context, id int) error {
+				return errors.New("Internal server error")
+			}}, "1", 500,
+		},
+	}
+
+	for _, e := range tests {
+		t.Run(e.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest("PATCH", "/customers/{id}", nil)
+
+			req.SetPathValue("id", e.pathValue)
+			handler := RemoveCustomerHandler(e.store)
+			handler(w, req)
+
+			if w.Code != e.want {
+				t.Errorf("Got %d want %d", w.Code, e.want)
+			}
+
+		})
+	}
 }
