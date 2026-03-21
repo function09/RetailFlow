@@ -9,4 +9,4 @@ require (
 	golang.org/x/crypto v0.48.0
 )
 
-require github.com/brianvoe/gofakeit/v7 v7.14.1 // indirect
+require github.com/brianvoe/gofakeit/v7 v7.14.1
