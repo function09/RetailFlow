@@ -27,6 +27,11 @@ func main() {
 	if err != nil {
 		log.Printf("Error clearing table: %s", err)
 	}
+	_, err = database.Exec("TRUNCATE TABLE customers RESTART IDENTITY CASCADE")
+
+	if err != nil {
+		log.Printf("Error clearing table: %s", err)
+	}
 	for _, e := range categories {
 		_, err := database.Exec("INSERT INTO categories (category) VALUES ($1);", e)
 
@@ -44,6 +49,11 @@ func main() {
 		for j := 0; j < batchSize; j++ {
 
 			_, err := tx.Exec("INSERT INTO products (sku, name, price, quantity, category_id ) VALUES($1, $2, $3, $4, $5)", gofakeit.UUID(), gofakeit.ProductName(), gofakeit.Number(1, 100), gofakeit.Number(1, 500), gofakeit.Number(1, len(categories)))
+
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = tx.Exec("INSERT INTO customers (first_name, last_name, email, is_active ) VALUES($1, $2, $3, $4)", gofakeit.FirstName(), gofakeit.LastName(), gofakeit.UUID()+"@mail.com", true)
 
 			if err != nil {
 				log.Fatal(err)
