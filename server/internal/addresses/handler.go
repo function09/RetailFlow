@@ -106,15 +106,15 @@ func AddCustomerAddressHandler(store AddressStore) http.HandlerFunc {
 			return
 		}
 
-		idString := r.PathValue("id")
-		idInt, err := strconv.Atoi(idString)
+		cidString := r.PathValue("id")
+		cidInt, err := strconv.Atoi(cidString)
 
 		if err != nil {
 			http.Error(w, "invalid path value", http.StatusBadRequest)
 			return
 		}
 
-		aid, err := store.AddCustomerAddress(r.Context(), &Address{StreetLine1: addressInput.StreetLine1, StreetLine2: addressInput.StreetLine2, City: addressInput.City, State: addressInput.State, ZipCode: addressInput.ZipCode, AddressType: addressInput.AddressType, IsDefault: addressInput.IsDefault, CustomerID: idInt})
+		aid, err := store.AddCustomerAddress(r.Context(), &Address{StreetLine1: addressInput.StreetLine1, StreetLine2: addressInput.StreetLine2, City: addressInput.City, State: addressInput.State, ZipCode: addressInput.ZipCode, AddressType: addressInput.AddressType, IsDefault: addressInput.IsDefault, CustomerID: cidInt})
 
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
