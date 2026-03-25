@@ -126,3 +126,26 @@ func AddCustomerAddressHandler(store AddressStore) http.HandlerFunc {
 		json.NewEncoder(w).Encode(aid)
 	}
 }
+
+func RemoveCustomerAddressHandler(store AddressStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		aidString := r.PathValue("id")
+		aidInt, err := strconv.Atoi(aidString)
+
+		if err != nil {
+			http.Error(w, "Invalid path value", http.StatusBadRequest)
+			return
+		}
+
+		if err := store.RemoveCustomerAddress(r.Context(), aidInt); err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, "Address not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+
+}

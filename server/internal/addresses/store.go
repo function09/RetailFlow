@@ -68,7 +68,18 @@ func (s *Store) AddCustomerAddress(ctx context.Context, address *Address) (int, 
 }
 
 func (s *Store) RemoveCustomerAddress(ctx context.Context, aid int) error {
-	_, err := s.ExecContext(ctx, "DELETE from addresses WHERE id = $1", aid)
+	result, err := s.ExecContext(ctx, "DELETE from addresses WHERE id = $1", aid)
+	if err != nil {
+		return err
+	}
 
-	return err
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }

@@ -153,3 +153,41 @@ func TestAddCustomerAddress(t *testing.T) {
 		})
 	}
 }
+
+func TestRemoveCustomerAddress(t *testing.T) {
+	var tests = []struct {
+		name      string
+		store     AddressStore
+		pathValue string
+		want      int
+	}{
+		{"Successfully removes an address", &FakeStore{RemoveCustomerAddressFn: func(ctx context.Context, aid int) error {
+			return nil
+		}}, "1", 200},
+		{"Invalid/No ID", &FakeStore{RemoveCustomerAddressFn: func(ctx context.Context, aid int) error {
+			return nil
+		}}, "abc", 400},
+		{"Address not found", &FakeStore{RemoveCustomerAddressFn: func(ctx context.Context, aid int) error {
+			return sql.ErrNoRows
+		}}, "2", 404},
+		{"DB error", &FakeStore{RemoveCustomerAddressFn: func(ctx context.Context, aid int) error {
+			return errors.New("internal server error")
+		}}, "1", 500},
+	}
+
+	for _, e := range tests {
+		t.Run(e.name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", "/addresses/{id}", nil)
+			w := httptest.NewRecorder()
+
+			req.SetPathValue("id", e.pathValue)
+
+			handler := RemoveCustomerAddressHandler(e.store)
+			handler(w, req)
+
+			if w.Code != e.want {
+				t.Errorf("Got %d want %d", w.Code, e.want)
+			}
+		})
+	}
+}
