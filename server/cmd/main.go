@@ -11,6 +11,7 @@ import (
 
 	"github.com/function09/order_management_system/server/config"
 	"github.com/function09/order_management_system/server/db"
+	"github.com/function09/order_management_system/server/internal/addresses"
 	"github.com/function09/order_management_system/server/internal/auth"
 	"github.com/function09/order_management_system/server/internal/customers"
 	"github.com/function09/order_management_system/server/internal/products"
@@ -38,6 +39,7 @@ func main() {
 	authStore := &auth.Store{DB: database}
 	productsStore := &products.Store{DB: database}
 	customerStore := &customers.Store{DB: database}
+	addressesStore := &addresses.Store{DB: database}
 
 	mux.HandleFunc("POST /auth/register", auth.RegisterUserHandler(authStore))
 	mux.HandleFunc("POST /auth/login", auth.LoginUserHandler(authStore, cfg.JWTSecret))
@@ -52,7 +54,10 @@ func main() {
 	mux.HandleFunc("POST /customers", middleware.AuthMiddleware(cfg.JWTSecret, customers.CreateCustomerHandler(customerStore)))
 	mux.HandleFunc("PATCH /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.RemoveCustomerHandler(customerStore)))
 	mux.HandleFunc("PUT /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.UpdateCustomerHandler(customerStore)))
-
+	mux.HandleFunc("GET /customers/{id}/addresses", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressesHandler(addressesStore)))
+	mux.HandleFunc("GET /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressHandler(addressesStore)))
+	mux.HandleFunc("POST /customers/{id}/addresses", middleware.AuthMiddleware(cfg.JWTSecret, addresses.AddCustomerAddressHandler(addressesStore)))
+	mux.HandleFunc("DELETE /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.RemoveCustomerAddressHandler(addressesStore)))
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
