@@ -56,7 +56,7 @@ func TestGetCustomerAddresses(t *testing.T) {
 
 	for _, e := range tests {
 		t.Run(e.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/customer/{id}", nil)
+			req := httptest.NewRequest("GET", "/customers/{id}/addresses", nil)
 			w := httptest.NewRecorder()
 
 			req.SetPathValue("id", e.param)
@@ -95,7 +95,7 @@ func TestGetCustomerAddress(t *testing.T) {
 
 	for _, e := range tests {
 		t.Run(e.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/customer/{id}", nil)
+			req := httptest.NewRequest("GET", "/addresses/{id}", nil)
 			w := httptest.NewRecorder()
 
 			req.SetPathValue("id", e.param)
