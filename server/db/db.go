@@ -21,4 +21,3 @@ func ConnectToDB(databaseURL string) *sql.DB {
 
 	return db
 }
-
