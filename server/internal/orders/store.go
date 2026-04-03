@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/function09/order_management_system/server/db"
 )
 
 type Order struct {
@@ -29,7 +31,7 @@ type OrderItem struct {
 }
 
 type Store struct {
-	*sql.DB
+	dbGetter db.DBGetter
 }
 
 type OrderStore interface {
