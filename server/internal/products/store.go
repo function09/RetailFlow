@@ -19,6 +19,10 @@ type Store struct {
 	dbGetter db.DBGetter
 }
 
+func NewStore(dbGetter db.DBGetter) *Store {
+	return &Store{dbGetter: dbGetter}
+}
+
 type ProductStore interface {
 	GetAllProducts(ctx context.Context, limit, offset int) ([]*Product, error)
 	GetProduct(ctx context.Context, id int) (*Product, error)

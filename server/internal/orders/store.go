@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/function09/order_management_system/server/db"
@@ -31,6 +32,10 @@ type OrderItem struct {
 
 type Store struct {
 	dbGetter db.DBGetter
+}
+
+func NewStore(dbGetter db.DBGetter) *Store {
+	return &Store{dbGetter: dbGetter}
 }
 
 type OrderStore interface {
@@ -95,7 +100,19 @@ func (s *Store) CreateOrderItems(ctx context.Context, orderItems []*OrderItem) e
 }
 
 func (s *Store) UpdateOrderStatus(ctx context.Context, id int, status string) error {
-	_, err := s.dbGetter(ctx).ExecContext(ctx, "UPDATE orders SET status=$1 WHERE id=$2", status, id)
+	result, err := s.dbGetter(ctx).ExecContext(ctx, "UPDATE orders SET status=$1 WHERE id=$2", status, id)
+	if err != nil {
+		return err
+	}
 
-	return err
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
