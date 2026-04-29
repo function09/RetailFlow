@@ -115,6 +115,49 @@ func TestCreateOrder(t *testing.T) {
 	}
 }
 
+func TestUpdateOrderStatus(t *testing.T) {
+	var tests = []struct {
+		name  string
+		store orderStatusUpdater
+		id    string
+		body  string
+		want  int
+	}{
+		{"Successfully updates order status", &FakeStore{UpdateOrderStatusFn: func(ctx context.Context, id int, status string) error {
+			return nil
+		}}, "1", `{"status":"confirmed"}`, 200},
+		{"Order not found", &FakeStore{UpdateOrderStatusFn: func(ctx context.Context, id int, status string) error {
+			return sql.ErrNoRows
+		}}, "99", `{"status":"confirmed"}`, 404},
+		{"DB call fails", &FakeStore{UpdateOrderStatusFn: func(ctx context.Context, id int, status string) error {
+			return errors.New("db error")
+		}}, "1", `{"status":"confirmed"}`, 500},
+		{"Invalid order ID", &FakeStore{UpdateOrderStatusFn: func(ctx context.Context, id int, status string) error {
+			return nil
+		}}, "abc", `{"status":"confirmed"}`, 400},
+		{"Malformed JSON body", &FakeStore{UpdateOrderStatusFn: func(ctx context.Context, id int, status string) error {
+			return nil
+		}}, "1", `{invalid}`, 400},
+	}
+
+	for _, e := range tests {
+		t.Run(e.name, func(t *testing.T) {
+			req := httptest.NewRequest("PUT", "/orders/"+e.id+"/status", strings.NewReader(e.body))
+			req.SetPathValue("id", e.id)
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+
+			handler := UpdateOrderStatusHandler(e.store)
+
+			handler(w, req)
+
+			if w.Code != e.want {
+				t.Errorf("Got %d want %d", w.Code, e.want)
+			}
+		})
+	}
+}
+
 func TestGetOrder(t *testing.T) {
 	var tests = []struct {
 		name  string

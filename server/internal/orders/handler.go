@@ -20,6 +20,10 @@ type orderCreator interface {
 	CreateOrder(ctx context.Context, so SalesOrderInput) error
 }
 
+type orderStatusUpdater interface {
+	UpdateOrderStatus(ctx context.Context, id int, status string) error
+}
+
 func GetOrdersHandler(store orderLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limitString := r.URL.Query().Get("limit")
@@ -98,4 +102,33 @@ func CreateOrderHandler(store orderCreator) http.HandlerFunc {
 		w.WriteHeader(http.StatusCreated)
 	}
 
+}
+
+func UpdateOrderStatusHandler(store orderStatusUpdater) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Status string `json:"status"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+			http.Error(w, "invalid body", http.StatusBadRequest)
+			return
+		}
+
+		id := r.PathValue("id")
+		idInt, err := strconv.Atoi(id)
+
+		if err != nil {
+			http.Error(w, "invalid path value", http.StatusBadRequest)
+			return
+		}
+
+		if err := store.UpdateOrderStatus(r.Context(), idInt, input.Status); err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, "order not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+	}
 }
