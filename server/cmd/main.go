@@ -14,6 +14,7 @@ import (
 	"github.com/function09/order_management_system/server/internal/addresses"
 	"github.com/function09/order_management_system/server/internal/auth"
 	"github.com/function09/order_management_system/server/internal/customers"
+	"github.com/function09/order_management_system/server/internal/orders"
 	"github.com/function09/order_management_system/server/internal/products"
 	"github.com/function09/order_management_system/server/middleware"
 	"github.com/joho/godotenv"
@@ -29,6 +30,8 @@ func main() {
 	database := db.ConnectToDB(cfg.DatabaseURL)
 	defer database.Close()
 
+	transactor, dbGetter := db.NewTransactor(database)
+
 	mux := http.NewServeMux()
 
 	server := &http.Server{
@@ -37,9 +40,13 @@ func main() {
 	}
 
 	authStore := &auth.Store{DB: database}
-	productsStore := &products.Store{DB: database}
+
 	customerStore := &customers.Store{DB: database}
 	addressesStore := &addresses.Store{DB: database}
+	productsStore := products.NewStore(dbGetter)
+	orderStore := orders.NewStore(dbGetter)
+
+	ordersService := orders.NewService(orderStore, productsStore, addressesStore, transactor)
 
 	mux.HandleFunc("POST /auth/register", auth.RegisterUserHandler(authStore))
 	mux.HandleFunc("POST /auth/login", auth.LoginUserHandler(authStore, cfg.JWTSecret))
@@ -58,6 +65,11 @@ func main() {
 	mux.HandleFunc("GET /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressHandler(addressesStore)))
 	mux.HandleFunc("POST /customers/{id}/addresses", middleware.AuthMiddleware(cfg.JWTSecret, addresses.AddCustomerAddressHandler(addressesStore)))
 	mux.HandleFunc("DELETE /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.RemoveCustomerAddressHandler(addressesStore)))
+	mux.HandleFunc("GET /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrdersHandler(orderStore)))
+	mux.HandleFunc("GET /orders/{id}", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrderHandler(orderStore)))
+	mux.HandleFunc("POST /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.CreateOrderHandler(ordersService)))
+	mux.HandleFunc("PUT /orders/{id}/status", middleware.AuthMiddleware(cfg.JWTSecret, orders.UpdateOrderStatusHandler(orderStore)))
+
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
