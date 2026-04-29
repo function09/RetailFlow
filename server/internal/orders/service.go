@@ -10,23 +10,23 @@ import (
 )
 
 type OrderItemInput struct {
-	ProductID int
-	Quantity  int
+	ProductID int `json:"product_id"`
+	Quantity  int `json:"quantity"`
 }
 
 type AddressInput struct {
-	StreetLine1 string
-	StreetLine2 string
-	City        string
-	State       string
-	ZipCode     string
+	StreetLine1 string `json:"street_line_1"`
+	StreetLine2 string `json:"street_line_2"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	ZipCode     string `json:"zip_code"`
 }
 
 type SalesOrderInput struct {
-	CustomerID  int
-	Fulfillment string
-	OrderItems  []*OrderItemInput
-	Address     *AddressInput
+	CustomerID  int               `json:"customer_id"`
+	Fulfillment string            `json:"fulfillment"`
+	OrderItems  []*OrderItemInput `json:"order_items"`
+	Address     *AddressInput     `json:"address"`
 }
 
 type ProductStore interface {
@@ -45,6 +45,9 @@ type Service struct {
 	transactor    db.Transactor
 }
 
+func NewService(orderStore OrderStore, productStore ProductStore, addressStore AddressStore, transactor db.Transactor) *Service {
+	return &Service{orderStore: orderStore, productsStore: productStore, addressStore: addressStore, transactor: transactor}
+}
 func (s *Service) CreateOrder(ctx context.Context, so SalesOrderInput) error {
 	err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 		if so.Address == nil {
