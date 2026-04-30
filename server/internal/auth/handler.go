@@ -93,6 +93,27 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 	}
 }
 
+func Me(secret string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		cookie, err := r.Cookie("token")
+
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		claims, err := ValidateToken(cookie.Value, secret)
+
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		json.NewEncoder(w).Encode(claims)
+	}
+}
+
 func LogOutHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: "token", Expires: time.Unix(0, 0)})
 	w.WriteHeader(http.StatusOK)
