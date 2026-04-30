@@ -13,9 +13,6 @@ import (
 	"github.com/function09/order_management_system/server/db"
 	"github.com/function09/order_management_system/server/internal/addresses"
 	"github.com/function09/order_management_system/server/internal/auth"
-	"github.com/function09/order_management_system/server/internal/customers"
-	"github.com/function09/order_management_system/server/internal/orders"
-	"github.com/function09/order_management_system/server/internal/products"
 	"github.com/function09/order_management_system/server/middleware"
 	"github.com/joho/godotenv"
 )
@@ -35,7 +32,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	server := &http.Server{
-		Handler: mux,
+		Handler: middleware.Cors(mux),
 		Addr:    cfg.Port,
 	}
 
@@ -51,24 +48,7 @@ func main() {
 	mux.HandleFunc("POST /auth/register", auth.RegisterUserHandler(authStore))
 	mux.HandleFunc("POST /auth/login", auth.LoginUserHandler(authStore, cfg.JWTSecret))
 	mux.HandleFunc("POST /auth/logout", auth.LogOutHandler)
-	mux.HandleFunc("GET /products", middleware.AuthMiddleware(cfg.JWTSecret, products.GetAllProductsHandler(productsStore)))
-	mux.HandleFunc("GET /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.GetProductHandler(productsStore)))
-	mux.HandleFunc("POST /products", middleware.AuthMiddleware(cfg.JWTSecret, products.AddProductHandler(productsStore)))
-	mux.HandleFunc("DELETE /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.RemoveProductHandler(productsStore)))
-	mux.HandleFunc("PUT /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.UpdateProductHandler(productsStore)))
-	mux.HandleFunc("GET /customers", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetAllCustomersHandler(customerStore)))
-	mux.HandleFunc("GET /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetCustomerHandler(customerStore)))
-	mux.HandleFunc("POST /customers", middleware.AuthMiddleware(cfg.JWTSecret, customers.CreateCustomerHandler(customerStore)))
-	mux.HandleFunc("PATCH /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.RemoveCustomerHandler(customerStore)))
-	mux.HandleFunc("PUT /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.UpdateCustomerHandler(customerStore)))
-	mux.HandleFunc("GET /customers/{id}/addresses", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressesHandler(addressesStore)))
-	mux.HandleFunc("GET /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressHandler(addressesStore)))
-	mux.HandleFunc("POST /customers/{id}/addresses", middleware.AuthMiddleware(cfg.JWTSecret, addresses.AddCustomerAddressHandler(addressesStore)))
-	mux.HandleFunc("DELETE /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.RemoveCustomerAddressHandler(addressesStore)))
-	mux.HandleFunc("GET /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrdersHandler(orderStore)))
-	mux.HandleFunc("GET /orders/{id}", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrderHandler(orderStore)))
-	mux.HandleFunc("POST /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.CreateOrderHandler(ordersService)))
-	mux.HandleFunc("PUT /orders/{id}/status", middleware.AuthMiddleware(cfg.JWTSecret, orders.UpdateOrderStatusHandler(orderStore)))
+	mux.HandleFunc("GET /auth/me", auth.Me(cfg.JWTSecret))
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

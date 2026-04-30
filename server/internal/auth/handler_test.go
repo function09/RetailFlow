@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 type FakeStore struct{}
@@ -114,6 +115,45 @@ func TestUserLogin(t *testing.T) {
 
 		if !found {
 			t.Error("expected token cookie to be set")
+		}
+	})
+}
+
+func TestMe(t *testing.T) {
+	t.Run("No cookie returns unauthorized", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/auth/me", nil)
+		w := httptest.NewRecorder()
+
+		Me("secret")(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("got %d want %d", w.Code, http.StatusUnauthorized)
+		}
+	})
+
+	t.Run("Invalid token returns unauthorized", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/auth/me", nil)
+		req.AddCookie(&http.Cookie{Name: "token", Value: "invalid.token.value"})
+		w := httptest.NewRecorder()
+
+		Me("secret")(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("got %d want %d", w.Code, http.StatusUnauthorized)
+		}
+	})
+
+	t.Run("Valid token returns user claims", func(t *testing.T) {
+		token, _ := GenerateToken("testuser", "secret", time.Hour)
+
+		req := httptest.NewRequest("GET", "/auth/me", nil)
+		req.AddCookie(&http.Cookie{Name: "token", Value: token})
+		w := httptest.NewRecorder()
+
+		Me("secret")(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("got %d want %d", w.Code, http.StatusOK)
 		}
 	})
 }
