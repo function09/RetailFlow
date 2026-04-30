@@ -12,6 +12,7 @@ import (
 	"github.com/function09/order_management_system/server/config"
 	"github.com/function09/order_management_system/server/db"
 	"github.com/function09/order_management_system/server/internal/auth"
+	"github.com/function09/order_management_system/server/middleware"
 	"github.com/joho/godotenv"
 )
 
@@ -28,7 +29,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	server := &http.Server{
-		Handler: mux,
+		Handler: middleware.Cors(mux),
 		Addr:    cfg.Port,
 	}
 
@@ -37,6 +38,7 @@ func main() {
 	mux.HandleFunc("POST /auth/register", auth.RegisterUserHandler(store))
 	mux.HandleFunc("POST /auth/login", auth.LoginUserHandler(store, cfg.JWTSecret))
 	mux.HandleFunc("POST /auth/logout", auth.LogOutHandler)
+	mux.HandleFunc("GET /auth/me", auth.Me(cfg.JWTSecret))
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
