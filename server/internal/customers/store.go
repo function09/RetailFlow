@@ -33,7 +33,7 @@ func (s *Store) GetAllCustomers(ctx context.Context, limit int, offset int) ([]*
 	}
 
 	defer rows.Close()
-	var customers []*Customer
+	customers := []*Customer{}
 
 	for rows.Next() {
 		var customer Customer

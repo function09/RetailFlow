@@ -54,7 +54,7 @@ func (s *Store) GetOrders(ctx context.Context, limit int, offset int) ([]*Order,
 	}
 	defer rows.Close()
 
-	var orders []*Order
+	orders := []*Order{}
 
 	for rows.Next() {
 		var order Order

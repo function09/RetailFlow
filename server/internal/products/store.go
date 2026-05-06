@@ -38,13 +38,13 @@ func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int) ([]*P
 	}
 	defer rows.Close()
 
-	var products []*Product
+	products := []*Product{}
 
 	for rows.Next() {
 		var prod Product
 
 		if err := rows.Scan(&prod.ID, &prod.SKU, &prod.Name, &prod.Price, &prod.Quantity, &prod.CategoryID); err != nil {
-			return products, err
+			return nil, err
 		}
 		products = append(products, &prod)
 	}
