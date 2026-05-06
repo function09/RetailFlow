@@ -98,7 +98,7 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 func Me(secret string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		cookie, err := r.Cookie("token")
+		cookie, err := r.Cookie("__Secure-token")
 
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
