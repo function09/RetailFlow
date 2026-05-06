@@ -58,7 +58,7 @@ func (s *Store) GetCustomer(ctx context.Context, id int) (*Customer, error) {
 
 func (s *Store) CreateCustomer(ctx context.Context, cst *Customer) (int, error) {
 	var customerID int
-	if err := s.QueryRowContext(ctx, "INSERT INTO customers (first_name, last_name, email, is_active) VALUES  ($1, $2, $3, $4) RETURNING id", cst.FirstName, cst.LastName, cst.Email).Scan(&customerID); err != nil {
+	if err := s.QueryRowContext(ctx, "INSERT INTO customers (first_name, last_name, email) VALUES  ($1, $2, $3) RETURNING id", cst.FirstName, cst.LastName, cst.Email).Scan(&customerID); err != nil {
 		return 0, err
 	}
 	return customerID, nil
