@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -42,6 +43,10 @@ func GenerateToken(username string, secret string, duration time.Duration) (stri
 
 func ValidateToken(tokenString string, secret string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(t *jwt.Token) (any, error) {
+		if t.Method != jwt.SigningMethodHS256 {
+			return nil, errors.New("unable to return secret")
+		}
+
 		return []byte(secret), nil
 	})
 
