@@ -35,7 +35,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	server := &http.Server{
-		Handler: mux,
+		Handler: middleware.Cors(mux),
 		Addr:    cfg.Port,
 	}
 
@@ -51,6 +51,7 @@ func main() {
 	mux.HandleFunc("POST /auth/register", auth.RegisterUserHandler(authStore))
 	mux.HandleFunc("POST /auth/login", auth.LoginUserHandler(authStore, cfg.JWTSecret))
 	mux.HandleFunc("POST /auth/logout", auth.LogOutHandler)
+	mux.HandleFunc("GET /auth/me", auth.Me(cfg.JWTSecret))
 	mux.HandleFunc("GET /products", middleware.AuthMiddleware(cfg.JWTSecret, products.GetAllProductsHandler(productsStore)))
 	mux.HandleFunc("GET /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.GetProductHandler(productsStore)))
 	mux.HandleFunc("POST /products", middleware.AuthMiddleware(cfg.JWTSecret, products.AddProductHandler(productsStore)))

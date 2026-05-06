@@ -42,7 +42,7 @@ func (s *Store) GetCustomerAddresses(ctx context.Context, cid int) ([]*Address, 
 	for rows.Next() {
 		var address Address
 
-		if err := rows.Scan(&address.StreetLine1, &address.StreetLine2, &address.City, &address.State, &address.ZipCode, &address.AddressType, &address.IsDefault, &address.CustomerID); err != nil {
+		if err := rows.Scan(&address.ID, &address.StreetLine1, &address.StreetLine2, &address.City, &address.State, &address.ZipCode, &address.AddressType, &address.IsDefault, &address.CustomerID); err != nil {
 			return nil, err
 		}
 		addresses = append(addresses, &address)
@@ -52,7 +52,7 @@ func (s *Store) GetCustomerAddresses(ctx context.Context, cid int) ([]*Address, 
 
 func (s *Store) GetCustomerAddress(ctx context.Context, aid int) (*Address, error) {
 	var address Address
-	if err := s.QueryRowContext(ctx, "SELECT id, street_line_1, street_line_2, city, state, zip_code, address_type, is_default,customer_id from addresses WHERE id=$1", aid).Scan(&address.StreetLine1, &address.StreetLine2, &address.City, &address.State, &address.ZipCode, &address.AddressType, &address.IsDefault, &address.CustomerID); err != nil {
+	if err := s.QueryRowContext(ctx, "SELECT id, street_line_1, street_line_2, city, state, zip_code, address_type, is_default,customer_id from addresses WHERE id=$1", aid).Scan(&address.ID, &address.StreetLine1, &address.StreetLine2, &address.City, &address.State, &address.ZipCode, &address.AddressType, &address.IsDefault, &address.CustomerID); err != nil {
 		return nil, err
 	}
 	return &address, nil
