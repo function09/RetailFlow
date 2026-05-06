@@ -83,10 +83,12 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 		}
 
 		http.SetCookie(w, &http.Cookie{
-			Name:     "token",
+			Name:     "__Secure-token",
 			Value:    token,
 			HttpOnly: true,
 			Path:     "/",
+			SameSite: http.SameSiteStrictMode,
+			Secure:   true,
 		})
 
 		w.WriteHeader(http.StatusOK)
@@ -94,7 +96,7 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 }
 
 func LogOutHandler(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{Name: "token", Expires: time.Unix(0, 0)})
+	http.SetCookie(w, &http.Cookie{Name: "__Secure-token", MaxAge: -1, Path: "/"})
 	w.WriteHeader(http.StatusOK)
 
 }
