@@ -3,6 +3,7 @@ package orders
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/function09/order_management_system/server/db"
@@ -21,6 +22,8 @@ type Order struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
+
+var validStatuses = map[string]bool{"pending": true, "processing": true, "shipped": true, "delivered": true, "cancelled": true}
 
 type OrderItem struct {
 	ID        int
@@ -100,6 +103,10 @@ func (s *Store) CreateOrderItems(ctx context.Context, orderItems []*OrderItem) e
 }
 
 func (s *Store) UpdateOrderStatus(ctx context.Context, id int, status string) error {
+	if _, ok := validStatuses[status]; !ok {
+		return fmt.Errorf("invalid status: %s", status)
+	}
+
 	result, err := s.dbGetter(ctx).ExecContext(ctx, "UPDATE orders SET status=$1 WHERE id=$2", status, id)
 	if err != nil {
 		return err
