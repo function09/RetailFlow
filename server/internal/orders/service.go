@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/function09/order_management_system/server/db"
@@ -75,6 +76,11 @@ func (s *Service) CreateOrder(ctx context.Context, so SalesOrderInput) error {
 			}
 
 		}
+
+		if len(so.OrderItems) == 0 {
+			return errors.New("no items are in this order")
+		}
+
 		newOrderItems := []*OrderItem{}
 		for _, item := range so.OrderItems {
 			product, err := s.productsStore.GetProduct(ctx, item.ProductID)
