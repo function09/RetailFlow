@@ -1,10 +1,24 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 )
+
+type contextKey string
+
+const ClaimsKey contextKey = "claims"
+
+func GetClaims(r *http.Request) *Claims {
+	claims, _ := r.Context().Value(ClaimsKey).(*Claims)
+	return claims
+}
+
+func WithClaims(r *http.Request, claims *Claims) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), ClaimsKey, claims))
+}
 
 type RegisterInput struct {
 	Username string `json:"username"`
@@ -95,19 +109,12 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 	}
 }
 
-func Me(secret string) http.HandlerFunc {
+func Me() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		cookie, err := r.Cookie("__Secure-token")
+		claims := GetClaims(r)
 
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		claims, err := ValidateToken(cookie.Value, secret)
-
-		if err != nil {
+		if claims == nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}

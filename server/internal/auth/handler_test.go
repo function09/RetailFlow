@@ -5,7 +5,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type FakeStore struct{}
@@ -107,7 +108,7 @@ func TestUserLogin(t *testing.T) {
 		found := false
 
 		for _, c := range cookies {
-			if c.Name == "token" {
+			if c.Name == "__Secure-token" {
 				found = true
 				break
 			}
@@ -120,37 +121,23 @@ func TestUserLogin(t *testing.T) {
 }
 
 func TestMe(t *testing.T) {
-	t.Run("No cookie returns unauthorized", func(t *testing.T) {
+	t.Run("No claims in context returns unauthorized", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/auth/me", nil)
 		w := httptest.NewRecorder()
 
-		Me("secret")(w, req)
+		Me()(w, req)
 
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("got %d want %d", w.Code, http.StatusUnauthorized)
 		}
 	})
 
-	t.Run("Invalid token returns unauthorized", func(t *testing.T) {
+	t.Run("Claims in context returns user claims", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/auth/me", nil)
-		req.AddCookie(&http.Cookie{Name: "token", Value: "invalid.token.value"})
+		req = WithClaims(req, &Claims{RegisteredClaims: jwt.RegisteredClaims{Subject: "testuser"}})
 		w := httptest.NewRecorder()
 
-		Me("secret")(w, req)
-
-		if w.Code != http.StatusUnauthorized {
-			t.Errorf("got %d want %d", w.Code, http.StatusUnauthorized)
-		}
-	})
-
-	t.Run("Valid token returns user claims", func(t *testing.T) {
-		token, _ := GenerateToken("testuser", "secret", time.Hour)
-
-		req := httptest.NewRequest("GET", "/auth/me", nil)
-		req.AddCookie(&http.Cookie{Name: "token", Value: token})
-		w := httptest.NewRecorder()
-
-		Me("secret")(w, req)
+		Me()(w, req)
 
 		if w.Code != http.StatusOK {
 			t.Errorf("got %d want %d", w.Code, http.StatusOK)
