@@ -39,10 +39,10 @@ func main() {
 		Addr:    cfg.Port,
 	}
 
-	authStore := &auth.Store{DB: database}
+	authStore := auth.NewStore(database)
 
-	customerStore := &customers.Store{DB: database}
-	addressesStore := &addresses.Store{DB: database}
+	customerStore := customers.NewStore(dbGetter)
+	addressesStore := addresses.NewStore(database)
 	productsStore := products.NewStore(dbGetter)
 	orderStore := orders.NewStore(dbGetter)
 
