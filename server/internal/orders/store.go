@@ -24,11 +24,11 @@ type Order struct {
 }
 
 var validStatuses = map[string]bool{
-	"pending":    true,
-	"processing": true,
-	"shipped":    true,
-	"delivered":  true,
-	"cancelled":  true,
+	"pending":   true,
+	"confirmed": true,
+	"shipped":   true,
+	"delivered": true,
+	"cancelled": true,
 }
 
 type OrderItem struct {
