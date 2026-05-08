@@ -2,6 +2,7 @@ package products
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/function09/order_management_system/server/db"
 )
@@ -38,13 +39,13 @@ func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int) ([]*P
 	}
 	defer rows.Close()
 
-	var products []*Product
+	products := []*Product{}
 
 	for rows.Next() {
 		var prod Product
 
 		if err := rows.Scan(&prod.ID, &prod.SKU, &prod.Name, &prod.Price, &prod.Quantity, &prod.CategoryID); err != nil {
-			return products, err
+			return nil, err
 		}
 		products = append(products, &prod)
 	}
@@ -69,20 +70,36 @@ func (s *Store) AddProduct(ctx context.Context, p *Product) error {
 }
 
 func (s *Store) RemoveProduct(ctx context.Context, p *Product) error {
-	_, err := s.dbGetter(ctx).ExecContext(ctx, "DELETE FROM products WHERE id = $1", p.ID)
-
+	result, err := s.dbGetter(ctx).ExecContext(ctx, "DELETE FROM products WHERE id = $1", p.ID)
 	if err != nil {
 		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return sql.ErrNoRows
 	}
 
 	return nil
 }
 
 func (s *Store) UpdateProduct(ctx context.Context, p *Product) error {
-	_, err := s.dbGetter(ctx).ExecContext(ctx, "UPDATE products SET name = $1, price = $2, quantity = $3, category_id = $4, sku = $5 WHERE id = $6", p.Name, p.Price, p.Quantity, p.CategoryID, p.SKU, p.ID)
-
+	result, err := s.dbGetter(ctx).ExecContext(ctx, "UPDATE products SET name = $1, price = $2, quantity = $3, category_id = $4, sku = $5 WHERE id = $6", p.Name, p.Price, p.Quantity, p.CategoryID, p.SKU, p.ID)
 	if err != nil {
 		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return sql.ErrNoRows
 	}
 
 	return nil

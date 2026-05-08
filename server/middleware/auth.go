@@ -9,20 +9,20 @@ import (
 func AuthMiddleware(secret string, handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		token, err := r.Cookie("token")
+		token, err := r.Cookie("__Secure-token")
 
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		_, err = auth.ValidateToken(token.Value, secret)
+		claims, err := auth.ValidateToken(token.Value, secret)
 
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		handler(w, r)
+		handler(w, auth.WithClaims(r, claims))
 	}
 }

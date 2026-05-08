@@ -1,10 +1,24 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 )
+
+type contextKey string
+
+const ClaimsKey contextKey = "claims"
+
+func GetClaims(r *http.Request) *Claims {
+	claims, _ := r.Context().Value(ClaimsKey).(*Claims)
+	return claims
+}
+
+func WithClaims(r *http.Request, claims *Claims) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), ClaimsKey, claims))
+}
 
 type RegisterInput struct {
 	Username string `json:"username"`
@@ -40,7 +54,7 @@ func RegisterUserHandler(store AuthStore) http.HandlerFunc {
 		userRegister.Username = input.Username
 		userRegister.CreatedAt = time.Now()
 
-		if err := store.RegisterUser(&userRegister); err != nil {
+		if err := store.RegisterUser(r.Context(), &userRegister); err != nil {
 			http.Error(w, "Error creating new user", http.StatusInternalServerError)
 			return
 		}
@@ -62,7 +76,7 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 
 		defer r.Body.Close()
 
-		user, err := store.GetUserByUserName(input.Username)
+		user, err := store.GetUserByUserName(r.Context(), input.Username)
 
 		if err != nil {
 			http.Error(w, "Invalid login credentials", http.StatusUnauthorized)
@@ -83,29 +97,24 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 		}
 
 		http.SetCookie(w, &http.Cookie{
-			Name:     "token",
+			Name:     "__Secure-token",
 			Value:    token,
 			HttpOnly: true,
 			Path:     "/",
+			SameSite: http.SameSiteStrictMode,
+			Secure:   true,
 		})
 
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-func Me(secret string) http.HandlerFunc {
+func Me() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		cookie, err := r.Cookie("token")
+		claims := GetClaims(r)
 
-		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		claims, err := ValidateToken(cookie.Value, secret)
-
-		if err != nil {
+		if claims == nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
@@ -115,7 +124,7 @@ func Me(secret string) http.HandlerFunc {
 }
 
 func LogOutHandler(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{Name: "token", Expires: time.Unix(0, 0)})
+	http.SetCookie(w, &http.Cookie{Name: "__Secure-token", MaxAge: -1, Path: "/"})
 	w.WriteHeader(http.StatusOK)
 
 }

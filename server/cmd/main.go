@@ -39,10 +39,10 @@ func main() {
 		Addr:    cfg.Port,
 	}
 
-	authStore := &auth.Store{DB: database}
+	authStore := auth.NewStore(database)
 
-	customerStore := &customers.Store{DB: database}
-	addressesStore := &addresses.Store{DB: database}
+	customerStore := customers.NewStore(dbGetter)
+	addressesStore := addresses.NewStore(database)
 	productsStore := products.NewStore(dbGetter)
 	orderStore := orders.NewStore(dbGetter)
 
@@ -51,7 +51,7 @@ func main() {
 	mux.HandleFunc("POST /auth/register", auth.RegisterUserHandler(authStore))
 	mux.HandleFunc("POST /auth/login", auth.LoginUserHandler(authStore, cfg.JWTSecret))
 	mux.HandleFunc("POST /auth/logout", auth.LogOutHandler)
-	mux.HandleFunc("GET /auth/me", auth.Me(cfg.JWTSecret))
+	mux.HandleFunc("GET /auth/me", middleware.AuthMiddleware(cfg.JWTSecret, auth.Me()))
 	mux.HandleFunc("GET /products", middleware.AuthMiddleware(cfg.JWTSecret, products.GetAllProductsHandler(productsStore)))
 	mux.HandleFunc("GET /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.GetProductHandler(productsStore)))
 	mux.HandleFunc("POST /products", middleware.AuthMiddleware(cfg.JWTSecret, products.AddProductHandler(productsStore)))
