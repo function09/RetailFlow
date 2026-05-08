@@ -23,7 +23,13 @@ type Order struct {
 	UpdatedAt   time.Time
 }
 
-var validStatuses = map[string]bool{"pending": true, "processing": true, "shipped": true, "delivered": true, "cancelled": true}
+var validStatuses = map[string]bool{
+	"pending":    true,
+	"processing": true,
+	"shipped":    true,
+	"delivered":  true,
+	"cancelled":  true,
+}
 
 type OrderItem struct {
 	ID        int
