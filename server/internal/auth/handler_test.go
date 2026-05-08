@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -12,20 +13,20 @@ import (
 type FakeStore struct{}
 type FakeStoreWithUser struct{}
 
-func (f *FakeStore) RegisterUser(user *User) error {
+func (f *FakeStore) RegisterUser(ctx context.Context, user *User) error {
 	return nil
 }
 
-func (f *FakeStore) GetUserByUserName(username string) (*User, error) {
+func (f *FakeStore) GetUserByUserName(ctx context.Context, username string) (*User, error) {
 	return &User{}, nil
 }
 
-func (f *FakeStoreWithUser) GetUserByUserName(username string) (*User, error) {
+func (f *FakeStoreWithUser) GetUserByUserName(ctx context.Context, username string) (*User, error) {
 	hash, _ := HashPassword("testpass")
 	return &User{Username: username, PasswordHash: hash}, nil
 }
 
-func (f *FakeStoreWithUser) RegisterUser(user *User) error {
+func (f *FakeStoreWithUser) RegisterUser(ctx context.Context, user *User) error {
 	return nil
 }
 

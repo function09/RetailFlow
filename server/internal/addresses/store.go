@@ -18,7 +18,11 @@ type Address struct {
 }
 
 type Store struct {
-	*sql.DB
+	db *sql.DB
+}
+
+func NewStore(db *sql.DB) *Store {
+	return &Store{db: db}
 }
 
 type AddressStore interface {
@@ -29,7 +33,7 @@ type AddressStore interface {
 }
 
 func (s *Store) GetCustomerAddresses(ctx context.Context, cid int) ([]*Address, error) {
-	rows, err := s.QueryContext(ctx, "SELECT id, street_line_1, street_line_2, city, state, zip_code, address_type, is_default,customer_id from addresses WHERE customer_id=$1", cid)
+	rows, err := s.db.QueryContext(ctx, "SELECT id, street_line_1, street_line_2, city, state, zip_code, address_type, is_default,customer_id from addresses WHERE customer_id=$1", cid)
 
 	if err != nil {
 		return nil, err
@@ -52,7 +56,7 @@ func (s *Store) GetCustomerAddresses(ctx context.Context, cid int) ([]*Address, 
 
 func (s *Store) GetCustomerAddress(ctx context.Context, aid int) (*Address, error) {
 	var address Address
-	if err := s.QueryRowContext(ctx, "SELECT id, street_line_1, street_line_2, city, state, zip_code, address_type, is_default,customer_id from addresses WHERE id=$1", aid).Scan(&address.ID, &address.StreetLine1, &address.StreetLine2, &address.City, &address.State, &address.ZipCode, &address.AddressType, &address.IsDefault, &address.CustomerID); err != nil {
+	if err := s.db.QueryRowContext(ctx, "SELECT id, street_line_1, street_line_2, city, state, zip_code, address_type, is_default,customer_id from addresses WHERE id=$1", aid).Scan(&address.ID, &address.StreetLine1, &address.StreetLine2, &address.City, &address.State, &address.ZipCode, &address.AddressType, &address.IsDefault, &address.CustomerID); err != nil {
 		return nil, err
 	}
 	return &address, nil
@@ -60,7 +64,7 @@ func (s *Store) GetCustomerAddress(ctx context.Context, aid int) (*Address, erro
 
 func (s *Store) AddCustomerAddress(ctx context.Context, address *Address) (int, error) {
 	var addressID int
-	if err := s.QueryRowContext(ctx, "INSERT INTO addresses (street_line_1, street_line_2, city, state, zip_code, address_type, is_default,customer_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id", address.StreetLine1, address.StreetLine2, address.City, address.State, address.ZipCode, address.AddressType, address.IsDefault, address.CustomerID).Scan(&addressID); err != nil {
+	if err := s.db.QueryRowContext(ctx, "INSERT INTO addresses (street_line_1, street_line_2, city, state, zip_code, address_type, is_default,customer_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id", address.StreetLine1, address.StreetLine2, address.City, address.State, address.ZipCode, address.AddressType, address.IsDefault, address.CustomerID).Scan(&addressID); err != nil {
 		return 0, err
 	}
 
@@ -68,7 +72,7 @@ func (s *Store) AddCustomerAddress(ctx context.Context, address *Address) (int, 
 }
 
 func (s *Store) RemoveCustomerAddress(ctx context.Context, aid int) error {
-	result, err := s.ExecContext(ctx, "DELETE from addresses WHERE id = $1", aid)
+	result, err := s.db.ExecContext(ctx, "DELETE from addresses WHERE id = $1", aid)
 	if err != nil {
 		return err
 	}

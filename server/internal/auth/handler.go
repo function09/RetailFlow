@@ -54,7 +54,7 @@ func RegisterUserHandler(store AuthStore) http.HandlerFunc {
 		userRegister.Username = input.Username
 		userRegister.CreatedAt = time.Now()
 
-		if err := store.RegisterUser(&userRegister); err != nil {
+		if err := store.RegisterUser(r.Context(), &userRegister); err != nil {
 			http.Error(w, "Error creating new user", http.StatusInternalServerError)
 			return
 		}
@@ -76,7 +76,7 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 
 		defer r.Body.Close()
 
-		user, err := store.GetUserByUserName(input.Username)
+		user, err := store.GetUserByUserName(r.Context(), input.Username)
 
 		if err != nil {
 			http.Error(w, "Invalid login credentials", http.StatusUnauthorized)

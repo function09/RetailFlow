@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"database/sql"
 	"time"
 )
@@ -13,25 +14,28 @@ type User struct {
 }
 
 type Store struct {
-	*sql.DB
+	db *sql.DB
 }
 
 type AuthStore interface {
-	RegisterUser(user *User) error
-	GetUserByUserName(username string) (*User, error)
+	RegisterUser(ctx context.Context, user *User) error
+	GetUserByUserName(ctx context.Context, username string) (*User, error)
 }
 
-func (s *Store) RegisterUser(user *User) error {
-	_, err := s.Exec("INSERT INTO users (username, password_hash, created_at) VALUES($1, $2, $3)", user.Username, user.PasswordHash, user.CreatedAt)
+func NewStore(db *sql.DB) *Store {
+	return &Store{db: db}
+}
 
+func (s *Store) RegisterUser(ctx context.Context, user *User) error {
+	_, err := s.db.ExecContext(ctx, "INSERT INTO users (username, password_hash, created_at) VALUES($1, $2, $3)", user.Username, user.PasswordHash, user.CreatedAt)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Store) GetUserByUserName(username string) (*User, error) {
-	row := s.QueryRow("SELECT id, username, password_hash, created_at FROM users WHERE username = $1", username)
+func (s *Store) GetUserByUserName(ctx context.Context, username string) (*User, error) {
+	row := s.db.QueryRowContext(ctx, "SELECT id, username, password_hash, created_at FROM users WHERE username = $1", username)
 
 	user := User{}
 
