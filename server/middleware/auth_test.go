@@ -31,7 +31,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 			if e.cookies {
 				req.AddCookie(&http.Cookie{
-					Name:  "token",
+					Name:  "__Secure-token",
 					Value: token,
 				})
 			}
