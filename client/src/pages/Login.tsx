@@ -2,13 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { AuthContext } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
-import { useState, type SubmitEventHandler } from "react";
+import { useContext, useState, type SubmitEventHandler } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate()
+  const authContext = useContext(AuthContext)
 
   const [username, setUsername] = useState<string>('')
   const [password, setPassword] = useState<string>('')
@@ -36,6 +38,7 @@ export default function Login() {
         message = await response.text()
         toast.error(message)
       } else {
+        await authContext.checkAuth()
         navigate("/dashboard")
       }
 
