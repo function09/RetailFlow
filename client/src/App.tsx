@@ -15,37 +15,19 @@ function App() {
         <SidebarProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path='/dashboard' element={
-              <ProtectedRoute>
-                <Layout>
-                  <DashBoard />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path='/orders' element={
-              <ProtectedRoute>
-                <Layout>
-                  <div>Orders coming soon</div>
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path='/customers' element={
-              <ProtectedRoute>
-                <Layout>
-                  <div>Customers coming soon</div>
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path='/products' element={
-              <ProtectedRoute>
-                <Layout>
-                  <div>Products coming soon</div>
-                </Layout>
-              </ProtectedRoute>
-            } />
+
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path='/dashboard' element={<DashBoard />} />
+                <Route path='/orders' element={<div />} />
+                <Route path='/customers' element={<div />} />
+                <Route path='/products' element={<div />} />
+              </Route>
+            </Route>
+
           </Routes>
         </SidebarProvider>
-      </AuthProvider>
+      </AuthProvider >
     </>
   )
 }
