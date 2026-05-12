@@ -1,7 +1,7 @@
-import { Link } from "react-router"
+import { Link, Outlet } from "react-router"
 import { Sidebar, SidebarContent, SidebarMenu, SidebarTrigger, SidebarMenuItem, SidebarMenuButton } from "./ui/sidebar"
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout() {
   return (
     <div className="flex h-screen w-full">
       <Sidebar>
@@ -32,7 +32,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </Sidebar >
       <main className="flex-1 p-6 overflow-auto">
         <SidebarTrigger />
-        {children}
+        <Outlet />
       </main>
     </div>
   )
