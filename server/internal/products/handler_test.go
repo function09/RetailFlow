@@ -10,15 +10,15 @@ import (
 )
 
 type FakeStore struct {
-	GetAllProductsFn func(ctx context.Context, limit, offset int) ([]*Product, error)
+	GetAllProductsFn func(ctx context.Context, limit, offset int, search string) ([]*Product, error)
 	GetProductFn     func(ctx context.Context, id int) (*Product, error)
 	AddProductFn     func(ctx context.Context, p *Product) error
 	UpdateProductFn  func(ctx context.Context, p *Product) error
 	RemoveProductFn  func(ctx context.Context, p *Product) error
 }
 
-func (s *FakeStore) GetAllProducts(ctx context.Context, limit, offset int) ([]*Product, error) {
-	return s.GetAllProductsFn(ctx, limit, offset)
+func (s *FakeStore) GetAllProducts(ctx context.Context, limit, offset int, search string) ([]*Product, error) {
+	return s.GetAllProductsFn(ctx, limit, offset, search)
 }
 
 func (s *FakeStore) GetProduct(ctx context.Context, id int) (*Product, error) {
@@ -44,24 +44,28 @@ func TestGetAllProducts(t *testing.T) {
 		param string
 		want  int
 	}{
-		{"Returns a list of products", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int) ([]*Product, error) {
+		{"Returns a list of products", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int, search string) ([]*Product, error) {
 			return []*Product{{ID: 1, Name: "Pepsi", Price: 199, Quantity: 2, CategoryID: 1}, {ID: 1, Name: "Coke", Price: 299, Quantity: 2, CategoryID: 1}}, nil
 		}}, "?limit=5&offset=0", 200},
-		{"Returns an empty list of products", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int) ([]*Product, error) {
+		{"Returns an empty list of products", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int, search string) ([]*Product, error) {
 			return []*Product{}, nil
 		}}, "?limit=5&offset=0", 200},
-		{"DB call fails", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int) ([]*Product, error) {
+		{"DB call fails", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int, search string) ([]*Product, error) {
 			return nil, errors.New("error db call failed")
 		}}, "?limit=5&offset=0", 500},
-		{"Invalid limit parameter", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int) ([]*Product, error) {
+		{"Invalid limit parameter", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int, search string) ([]*Product, error) {
 			return []*Product{{ID: 1, Name: "Pepsi", Price: 199, Quantity: 2, CategoryID: 1}, {ID: 1, Name: "Coke", Price: 299, Quantity: 2, CategoryID: 1}}, nil
 		}}, "?limit=abc&offset=0", 200},
-		{"Invalid offset parameter", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int) ([]*Product, error) {
+		{"Invalid offset parameter", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int, search string) ([]*Product, error) {
 			return []*Product{{ID: 1, Name: "Pepsi", Price: 199, Quantity: 2, CategoryID: 1}, {ID: 1, Name: "Coke", Price: 299, Quantity: 2, CategoryID: 1}}, nil
 		}}, "?limit=5&offset=abc", 200},
-		{"Missing parameter", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int) ([]*Product, error) {
+		{"Missing parameter", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int, search string) ([]*Product, error) {
 			return []*Product{{ID: 1, Name: "Pepsi", Price: 199, Quantity: 2, CategoryID: 1}, {ID: 1, Name: "Coke", Price: 299, Quantity: 2, CategoryID: 1}}, nil
 		}}, "?limit=&offset=abc", 200},
+
+		{"search returns specified product", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int, search string) ([]*Product, error) {
+			return []*Product{{ID: 1, Name: "Coke", Price: 299, Quantity: 2, CategoryID: 1}}, nil
+		}}, "?limit=&offset=abc&search=coke", 200},
 	}
 
 	for _, e := range tests {

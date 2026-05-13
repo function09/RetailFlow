@@ -19,6 +19,7 @@ func GetAllProductsHandler(store ProductStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limitString := r.URL.Query().Get("limit")
 		offsetString := r.URL.Query().Get("offset")
+		searchString := r.URL.Query().Get("search")
 
 		limitInt, err := strconv.Atoi(limitString)
 
@@ -32,7 +33,7 @@ func GetAllProductsHandler(store ProductStore) http.HandlerFunc {
 			offsetInt = 0
 		}
 
-		products, err := store.GetAllProducts(r.Context(), limitInt, offsetInt)
+		products, err := store.GetAllProducts(r.Context(), limitInt, offsetInt, searchString)
 
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)

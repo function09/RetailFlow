@@ -14,6 +14,7 @@ type Product struct {
 	Price      int
 	Quantity   int
 	CategoryID int
+	Category   string
 }
 
 type Store struct {
@@ -25,15 +26,26 @@ func NewStore(dbGetter db.DBGetter) *Store {
 }
 
 type ProductStore interface {
-	GetAllProducts(ctx context.Context, limit, offset int) ([]*Product, error)
+	GetAllProducts(ctx context.Context, limit, offset int, search string) ([]*Product, error)
 	GetProduct(ctx context.Context, id int) (*Product, error)
 	AddProduct(ctx context.Context, p *Product) error
 	RemoveProduct(ctx context.Context, p *Product) error
 	UpdateProduct(ctx context.Context, p *Product) error
 }
 
-func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int) ([]*Product, error) {
-	rows, err := s.dbGetter(ctx).QueryContext(ctx, "SELECT id, sku, name, price, quantity, category_id FROM products ORDER BY id ASC LIMIT $1 OFFSET $2", limit, offset)
+func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int, search string) ([]*Product, error) {
+	query := "SELECT products.id, products.sku, products.name, products.price, products.quantity, products.category_id, categories.category FROM products LEFT JOIN categories ON products.category_id=categories.id"
+
+	args := []any{limit, offset}
+
+	if len(search) != 0 {
+		query += " WHERE name ILIKE '%' || $3 || '%'"
+		args = append(args, search)
+	}
+
+	query += " ORDER BY products.id ASC LIMIT $1 OFFSET $2"
+
+	rows, err := s.dbGetter(ctx).QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +56,7 @@ func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int) ([]*P
 	for rows.Next() {
 		var prod Product
 
-		if err := rows.Scan(&prod.ID, &prod.SKU, &prod.Name, &prod.Price, &prod.Quantity, &prod.CategoryID); err != nil {
+		if err := rows.Scan(&prod.ID, &prod.SKU, &prod.Name, &prod.Price, &prod.Quantity, &prod.CategoryID, &prod.Category); err != nil {
 			return nil, err
 		}
 		products = append(products, &prod)
