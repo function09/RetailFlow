@@ -6,6 +6,7 @@ import { DashBoard } from './pages/Dashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SidebarProvider } from './components/ui/sidebar'
 import Layout from './components/Layout'
+import Products from './pages/Products'
 
 function App() {
   return (
@@ -21,7 +22,7 @@ function App() {
                 <Route path='/dashboard' element={<DashBoard />} />
                 <Route path='/orders' element={<div />} />
                 <Route path='/customers' element={<div />} />
-                <Route path='/products' element={<div />} />
+                <Route path='/products' element={<Products />} />
               </Route>
             </Route>
 
