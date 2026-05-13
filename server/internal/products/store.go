@@ -3,6 +3,7 @@ package products
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/function09/order_management_system/server/db"
 )
@@ -26,14 +27,14 @@ func NewStore(dbGetter db.DBGetter) *Store {
 }
 
 type ProductStore interface {
-	GetAllProducts(ctx context.Context, limit, offset int, search string) ([]*Product, error)
+	GetAllProducts(ctx context.Context, limit, offset int, search string, sort string, order string) ([]*Product, error)
 	GetProduct(ctx context.Context, id int) (*Product, error)
 	AddProduct(ctx context.Context, p *Product) error
 	RemoveProduct(ctx context.Context, p *Product) error
 	UpdateProduct(ctx context.Context, p *Product) error
 }
 
-func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int, search string) ([]*Product, error) {
+func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int, search string, sort string, order string) ([]*Product, error) {
 	query := "SELECT products.id, products.sku, products.name, products.price, products.quantity, products.category_id, categories.category FROM products LEFT JOIN categories ON products.category_id=categories.id"
 
 	args := []any{limit, offset}
@@ -43,7 +44,18 @@ func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int, searc
 		args = append(args, search)
 	}
 
-	query += " ORDER BY products.id ASC LIMIT $1 OFFSET $2"
+	validSortColumns := map[string]bool{
+		"name":     true,
+		"price":    true,
+		"quantity": true,
+		"sku":      true,
+	}
+
+	if !validSortColumns[sort] {
+		sort = "products.id"
+	}
+
+	query += fmt.Sprintf(" ORDER BY %s %s LIMIT $1 OFFSET $2", sort, order)
 
 	rows, err := s.dbGetter(ctx).QueryContext(ctx, query, args...)
 	if err != nil {
