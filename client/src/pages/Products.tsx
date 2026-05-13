@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { Products } from "@/types/types"
 import { useEffect, useState } from "react"
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 
 export default function Products() {
   const [products, setProducts] = useState<Products[]>([])
@@ -11,6 +12,18 @@ export default function Products() {
   const [page, setPage] = useState<number>(1)
   const [search, setSearch] = useState<string>("")
   const [debouncedSearch, setDebouncedSearch] = useState<string>("")
+  const [sort, setSort] = useState<string>("")
+  const [order, setOrder] = useState<"asc" | "desc">("asc")
+
+  const handleSort = (column: string) => {
+    if (sort === column) {
+      setOrder(o => o === "asc" ? "desc" : "asc")
+    } else {
+      setSort(column)
+      setOrder("asc")
+    }
+    setPage(1)
+  }
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -19,7 +32,7 @@ export default function Products() {
         const options = { credentials: "include" as const, headers: { "Content-Type": "application/json" } }
         const url = "http://localhost:8080"
 
-        const productsRes = await fetch(url + `/products?limit=20&offset=${(page - 1) * 20}&search=${debouncedSearch}`, options)
+        const productsRes = await fetch(url + `/products?limit=20&offset=${(page - 1) * 20}&search=${debouncedSearch}&sort=${sort}&order=${order}`, options)
 
         if (!productsRes.ok) {
           throw new Error("Failed to fetch counts")
@@ -34,7 +47,7 @@ export default function Products() {
       }
     }
     fetchProducts()
-  }, [page, debouncedSearch])
+  }, [page, debouncedSearch, sort, order])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -64,10 +77,38 @@ export default function Products() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>SKU</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Quantity</TableHead>
+              <TableHead
+                className="cursor-pointer select-none hover:text-foreground"
+                onClick={() => handleSort("sku")}
+              >
+                <span className="flex items-center gap-1">
+                  SKU {sort === "sku" ? (order === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none hover:text-foreground"
+                onClick={() => handleSort("name")}
+              >
+                <span className="flex items-center gap-1">
+                  Name {sort === "name" ? (order === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none hover:text-foreground"
+                onClick={() => handleSort("price")}
+              >
+                <span className="flex items-center gap-1">
+                  Price {sort === "price" ? (order === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                </span>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none hover:text-foreground"
+                onClick={() => handleSort("quantity")}
+              >
+                <span className="flex items-center gap-1">
+                  Quantity {sort === "quantity" ? (order === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                </span>
+              </TableHead>
               <TableHead>Category</TableHead>
             </TableRow>
           </TableHeader>
