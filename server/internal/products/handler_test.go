@@ -72,6 +72,9 @@ func TestGetAllProducts(t *testing.T) {
 		{"invalid sort column defaults to id", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int, search string, sort string, order string) ([]*Product, error) {
 			return []*Product{{ID: 1, Name: "Pepsi", Price: 199, Quantity: 2, CategoryID: 1}}, nil
 		}}, "?limit=20&offset=0&sort=invalid_column", 200},
+		{"sort by category returns 200", &FakeStore{GetAllProductsFn: func(ctx context.Context, limit int, offset int, search string, sort string, order string) ([]*Product, error) {
+			return []*Product{{ID: 1, Name: "Coke", Price: 299, Quantity: 2, CategoryID: 1}, {ID: 2, Name: "Pepsi", Price: 199, Quantity: 2, CategoryID: 1}}, nil
+		}}, "?limit=20&offset=0&sort=category", 200},
 	}
 
 	for _, e := range tests {

@@ -44,18 +44,20 @@ func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int, searc
 		args = append(args, search)
 	}
 
-	validSortColumns := map[string]bool{
-		"name":     true,
-		"price":    true,
-		"quantity": true,
-		"sku":      true,
+	validSortColumns := map[string]string{
+		"name":     "products.name",
+		"price":    "products.price",
+		"quantity": "products.quantity",
+		"sku":      "products.sku",
+		"category": "categories.category",
 	}
 
-	if !validSortColumns[sort] {
-		sort = "products.id"
+	col := validSortColumns[sort]
+	if col == "" {
+		col = "products.id"
 	}
 
-	query += fmt.Sprintf(" ORDER BY %s %s LIMIT $1 OFFSET $2", sort, order)
+	query += fmt.Sprintf(" ORDER BY %s %s LIMIT $1 OFFSET $2", col, order)
 
 	rows, err := s.dbGetter(ctx).QueryContext(ctx, query, args...)
 	if err != nil {
