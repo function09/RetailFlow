@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { Products } from "@/types/types"
 import { useEffect, useState } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from "lucide-react"
 
 export default function Products() {
   const [products, setProducts] = useState<Products[]>([])
@@ -14,6 +16,7 @@ export default function Products() {
   const [debouncedSearch, setDebouncedSearch] = useState<string>("")
   const [sort, setSort] = useState<string>("")
   const [order, setOrder] = useState<"asc" | "desc">("asc")
+  const [selectedProduct, setSelectedProduct] = useState<Products | null>(null)
 
   const handleSort = (column: string) => {
     if (sort === column) {
@@ -109,7 +112,16 @@ export default function Products() {
                   Quantity {sort === "quantity" ? (order === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
                 </span>
               </TableHead>
-              <TableHead>Category</TableHead>
+              <TableHead
+                className="cursor-pointer select-none hover:text-foreground"
+                onClick={() => handleSort("category")}
+              >
+                <span className="flex items-center gap-1">
+                  Category {sort === "category" ? (order === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+
+                </span>
+              </TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -137,12 +149,37 @@ export default function Products() {
                   <TableCell>${(product.Price / 100).toFixed(2)}</TableCell>
                   <TableCell>{product.Quantity}</TableCell>
                   <TableCell>{product.Category}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => setSelectedProduct(product)}>
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      <Sheet open={selectedProduct !== null} onOpenChange={(open) => { if (!open) setSelectedProduct(null) }}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Edit Product</SheetTitle>
+          </SheetHeader>
+        </SheetContent>
+      </Sheet>
 
       <div className="flex items-center justify-end gap-2">
         <Button
