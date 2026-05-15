@@ -3,8 +3,11 @@ package products
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
+
+	"github.com/lib/pq"
 )
 
 type ProductInput struct {
@@ -103,11 +106,19 @@ func RemoveProductHandler(store ProductStore) http.HandlerFunc {
 			return
 		}
 
+		var pqErr *pq.Error
+
 		if err := store.RemoveProduct(r.Context(), &Product{ID: pathValueInt}); err != nil {
 			if err == sql.ErrNoRows {
 				http.Error(w, "Product not found", http.StatusNotFound)
 				return
 			}
+
+			if errors.As(err, &pqErr) && pqErr.Code == "23503" {
+				http.Error(w, "Conflict", http.StatusConflict)
+				return
+			}
+
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -131,7 +142,7 @@ func UpdateProductHandler(store ProductStore) http.HandlerFunc {
 			return
 		}
 
-		if err := store.UpdateProduct(r.Context(), &Product{ID: pathValueInt, Name: product.Name, Price: product.Price, Quantity: product.Quantity, CategoryID: product.CategoryID}); err != nil {
+		if err := store.UpdateProduct(r.Context(), &Product{ID: pathValueInt, SKU: product.SKU, Name: product.Name, Price: product.Price, Quantity: product.Quantity, CategoryID: product.CategoryID}); err != nil {
 			if err == sql.ErrNoRows {
 				http.Error(w, "Product not found", http.StatusNotFound)
 				return

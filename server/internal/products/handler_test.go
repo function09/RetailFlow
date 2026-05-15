@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/lib/pq"
 )
 
 type FakeStore struct {
@@ -177,6 +179,9 @@ func TestRemoveProduct(t *testing.T) {
 		{"Product not found", &FakeStore{RemoveProductFn: func(ctx context.Context, p *Product) error {
 			return sql.ErrNoRows
 		}}, "2", 404},
+		{"Product has existing orders", &FakeStore{RemoveProductFn: func(ctx context.Context, p *Product) error {
+			return &pq.Error{Code: "23503"}
+		}}, "1", 409},
 	}
 
 	for _, e := range tests {
