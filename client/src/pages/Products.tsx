@@ -4,12 +4,13 @@ import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import type { Products } from "@/types/types"
+import type { Products, Categories } from "@/types/types"
 import { useEffect, useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from "lucide-react"
 
 export default function Products() {
   const [products, setProducts] = useState<Products[]>([])
+  const [categories, setCategories] = useState<Categories[]>([])
   const [loading, setLoading] = useState<boolean>(false)
   const [page, setPage] = useState<number>(1)
   const [search, setSearch] = useState<string>("")
@@ -17,6 +18,48 @@ export default function Products() {
   const [sort, setSort] = useState<string>("")
   const [order, setOrder] = useState<"asc" | "desc">("asc")
   const [selectedProduct, setSelectedProduct] = useState<Products | null>(null)
+  const [refresh, setRefresh] = useState<number>(0)
+
+  const handleUpdate = async () => {
+    if (!selectedProduct) return
+    try {
+      const options = {
+        method: "PUT",
+        credentials: "include" as const,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedProduct.Name,
+          sku: selectedProduct.SKU,
+          price: selectedProduct.Price,
+          quantity: selectedProduct.Quantity,
+          category_id: selectedProduct.CategoryID,
+        })
+      }
+      const res = await fetch(`http://localhost:8080/products/${selectedProduct.ID}`, options)
+      if (!res.ok) throw new Error("Failed to update product")
+      setSelectedProduct(null)
+      setRefresh(r => r + 1)
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    try {
+      const res = await fetch(`http://localhost:8080/products/${id}`, {
+        method: "DELETE",
+        credentials: "include" as const,
+      })
+
+      if (!res.ok) {
+        throw new Error("Failed to delete product")
+      }
+
+      setRefresh(r => r + 1)
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   const handleSort = (column: string) => {
     if (sort === column) {
@@ -50,7 +93,7 @@ export default function Products() {
       }
     }
     fetchProducts()
-  }, [page, debouncedSearch, sort, order])
+  }, [page, debouncedSearch, sort, order, refresh])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -60,6 +103,27 @@ export default function Products() {
 
     return () => clearTimeout(timer)
   }, [search])
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const options = { credentials: "include" as const, headers: { "Content-Type": "application/json" } }
+        const url = "http://localhost:8080"
+
+        const categoriesRes = await fetch(url + "/categories", options)
+
+        if (!categoriesRes.ok) {
+          throw new Error("Failed to fetch categories")
+        }
+
+        const categoriesJSON = await categoriesRes.json()
+        setCategories(categoriesJSON)
+      } catch (e) {
+        console.log(e)
+      }
+    }
+    fetchCategories()
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -160,7 +224,7 @@ export default function Products() {
                         <DropdownMenuItem onSelect={() => setSelectedProduct(product)}>
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleDelete(product.ID)}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -178,6 +242,48 @@ export default function Products() {
           <SheetHeader>
             <SheetTitle>Edit Product</SheetTitle>
           </SheetHeader>
+          <div className="flex flex-col gap-4 mt-4">
+            <div>
+              <label>SKU</label>
+              <Input value={selectedProduct?.SKU ?? ""} onChange={e => {
+                if (!selectedProduct) return
+                setSelectedProduct({ ...selectedProduct, SKU: e.target.value })
+              }} />
+            </div>
+            <div>
+              <label>Name</label>
+              <Input value={selectedProduct?.Name ?? ""} onChange={e => {
+                if (!selectedProduct) return
+                setSelectedProduct({ ...selectedProduct, Name: e.target.value })
+              }} />
+            </div>
+            <div>
+              <label>Price</label>
+              <Input type="number" value={selectedProduct?.Price ?? 0} onChange={e => {
+                if (!selectedProduct) return
+                setSelectedProduct({ ...selectedProduct, Price: Number(e.target.value) })
+              }} />
+            </div>
+            <div>
+              <label>Quantity</label>
+              <Input type="number" value={selectedProduct?.Quantity ?? 0} onChange={e => {
+                if (!selectedProduct) return
+                setSelectedProduct({ ...selectedProduct, Quantity: Number(e.target.value) })
+              }} />
+            </div>
+            <div>
+              <label>Category</label>
+              <select value={selectedProduct?.CategoryID ?? ""} onChange={e => {
+                if (!selectedProduct) return
+                setSelectedProduct({ ...selectedProduct, CategoryID: Number(e.target.value) })
+              }}>
+                {categories.map((cat) => (
+                  <option key={cat.ID} value={cat.ID}>{cat.Category}</option>
+                ))}
+              </select>
+            </div>
+            <Button onClick={handleUpdate}>Save</Button>
+          </div>
         </SheetContent>
       </Sheet>
 
