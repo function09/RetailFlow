@@ -13,6 +13,7 @@ import (
 	"github.com/function09/order_management_system/server/db"
 	"github.com/function09/order_management_system/server/internal/addresses"
 	"github.com/function09/order_management_system/server/internal/auth"
+	"github.com/function09/order_management_system/server/internal/categories"
 	"github.com/function09/order_management_system/server/internal/customers"
 	"github.com/function09/order_management_system/server/internal/orders"
 	"github.com/function09/order_management_system/server/internal/products"
@@ -44,6 +45,7 @@ func main() {
 	customerStore := customers.NewStore(dbGetter)
 	addressesStore := addresses.NewStore(database)
 	productsStore := products.NewStore(dbGetter)
+	categoriesStore := categories.NewStore(dbGetter)
 	orderStore := orders.NewStore(dbGetter)
 
 	ordersService := orders.NewService(orderStore, productsStore, addressesStore, transactor)
@@ -57,6 +59,7 @@ func main() {
 	mux.HandleFunc("POST /products", middleware.AuthMiddleware(cfg.JWTSecret, products.AddProductHandler(productsStore)))
 	mux.HandleFunc("DELETE /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.RemoveProductHandler(productsStore)))
 	mux.HandleFunc("PUT /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.UpdateProductHandler(productsStore)))
+	mux.HandleFunc("GET /categories", middleware.AuthMiddleware(cfg.JWTSecret, categories.GetAllCategoriesHandler(categoriesStore)))
 	mux.HandleFunc("GET /customers", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetAllCustomersHandler(customerStore)))
 	mux.HandleFunc("GET /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetCustomerHandler(customerStore)))
 	mux.HandleFunc("POST /customers", middleware.AuthMiddleware(cfg.JWTSecret, customers.CreateCustomerHandler(customerStore)))
