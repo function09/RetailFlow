@@ -22,3 +22,9 @@ export interface Categories {
   ID: number,
   Category: string
 }
+
+export interface ProductFormProps {
+  categories: Categories[]
+  product: Products | null
+  onSuccess: () => void
+}
