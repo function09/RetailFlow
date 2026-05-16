@@ -23,6 +23,14 @@ export interface Categories {
   Category: string
 }
 
+export interface Customers {
+  ID: number,
+  FirstName: string
+  LastName: string
+  Email: string
+  IsActive: boolean
+}
+
 export interface ProductFormProps {
   categories: Categories[]
   product: Products | null
