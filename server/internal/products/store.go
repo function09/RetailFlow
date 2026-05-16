@@ -41,7 +41,7 @@ func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int, searc
 
 	if len(search) != 0 {
 		query += " WHERE name ILIKE '%' || $3 || '%'"
-		args = append(args, search)
+		args = append(args, "%"+search+"%")
 	}
 
 	validSortColumns := map[string]string{
@@ -55,6 +55,10 @@ func (s *Store) GetAllProducts(ctx context.Context, limit int, offset int, searc
 	col := validSortColumns[sort]
 	if col == "" {
 		col = "products.id"
+	}
+
+	if order != "asc" && order != "desc" {
+		order = "asc"
 	}
 
 	query += fmt.Sprintf(" ORDER BY %s %s LIMIT $1 OFFSET $2", col, order)
