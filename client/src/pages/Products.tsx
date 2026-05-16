@@ -58,7 +58,7 @@ export default function Products() {
         const productsRes = await fetch(url + `/products?limit=20&offset=${(page - 1) * 20}&search=${debouncedSearch}&sort=${sort}&order=${order}`, options)
 
         if (!productsRes.ok) {
-          throw new Error("Failed to fetch counts")
+          throw new Error("Failed to fetch products")
         }
 
         const productsJSON = await productsRes.json()
