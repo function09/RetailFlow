@@ -33,7 +33,11 @@ func GetAllCustomersHandler(store CustomerStore) http.HandlerFunc {
 			offsetInt = 0
 		}
 
-		customers, err := store.GetAllCustomers(r.Context(), limitInt, offsetInt)
+		search := r.URL.Query().Get("search")
+		sort := r.URL.Query().Get("sort")
+		order := r.URL.Query().Get("order")
+
+		customers, err := store.GetAllCustomers(r.Context(), limitInt, offsetInt, search, sort, order)
 
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)

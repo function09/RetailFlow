@@ -10,15 +10,15 @@ import (
 )
 
 type FakeStore struct {
-	GetAllCustomersFn func(ctx context.Context, limit int, offset int) ([]*Customer, error)
+	GetAllCustomersFn func(ctx context.Context, limit int, offset int, search string, sort string, order string) ([]*Customer, error)
 	GetCustomerFn     func(ctx context.Context, id int) (*Customer, error)
 	CreateCustomerFn  func(ctx context.Context, cst *Customer) (int, error)
 	RemoveCustomerFn  func(ctx context.Context, id int) error
 	UpdateCustomerFn  func(ctx context.Context, cst *Customer) error
 }
 
-func (s *FakeStore) GetAllCustomers(ctx context.Context, limit int, offset int) ([]*Customer, error) {
-	return s.GetAllCustomersFn(ctx, limit, offset)
+func (s *FakeStore) GetAllCustomers(ctx context.Context, limit int, offset int, search string, sort string, order string) ([]*Customer, error) {
+	return s.GetAllCustomersFn(ctx, limit, offset, search, sort, order)
 }
 
 func (s *FakeStore) GetCustomer(ctx context.Context, id int) (*Customer, error) {
@@ -42,22 +42,22 @@ func TestGetAllCustomers(t *testing.T) {
 		param string
 		want  int
 	}{
-		{"returns a list of customers", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit, offset int) ([]*Customer, error) {
+		{"returns a list of customers", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit, offset int, search, sort, order string) ([]*Customer, error) {
 			return []*Customer{{ID: 1, FirstName: "John", LastName: "Doe", Email: "johndoe@mail.com", IsActive: true}, {ID: 2, FirstName: "Jane", LastName: "Doe", Email: "janedoe@mail.com", IsActive: true}}, nil
 		}}, "?limit=5&offset=0", 200},
-		{"returns an empty list of customers", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit, offset int) ([]*Customer, error) {
+		{"returns an empty list of customers", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit, offset int, search, sort, order string) ([]*Customer, error) {
 			return []*Customer{}, nil
 		}}, "?limit=5&offset=0", 200},
-		{"DB call fails", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit, offset int) ([]*Customer, error) {
+		{"DB call fails", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit, offset int, search, sort, order string) ([]*Customer, error) {
 			return nil, errors.New("error db call failed")
 		}}, "?limit=5&offset=0", 500},
-		{"Invalid limit parameter", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit int, offset int) ([]*Customer, error) {
+		{"Invalid limit parameter", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit int, offset int, search, sort, order string) ([]*Customer, error) {
 			return []*Customer{{ID: 1, FirstName: "John", LastName: "Doe", Email: "johndoe@mail.com", IsActive: true}, {ID: 2, FirstName: "Jane", LastName: "Doe", Email: "janedoe@mail.com", IsActive: true}}, nil
 		}}, "?limit=abc&offset=0", 200},
-		{"Invalid offset parameter", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit int, offset int) ([]*Customer, error) {
+		{"Invalid offset parameter", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit int, offset int, search, sort, order string) ([]*Customer, error) {
 			return []*Customer{{ID: 1, FirstName: "John", LastName: "Doe", Email: "johndoe@mail.com", IsActive: true}, {ID: 2, FirstName: "Jane", LastName: "Doe", Email: "janedoe@mail.com", IsActive: true}}, nil
 		}}, "?limit=5&offset=abc", 200},
-		{"No query parameter", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit int, offset int) ([]*Customer, error) {
+		{"No query parameter", &FakeStore{GetAllCustomersFn: func(ctx context.Context, limit int, offset int, search, sort, order string) ([]*Customer, error) {
 			return []*Customer{{ID: 1, FirstName: "John", LastName: "Doe", Email: "johndoe@mail.com", IsActive: true}, {ID: 2, FirstName: "Jane", LastName: "Doe", Email: "janedoe@mail.com", IsActive: true}}, nil
 		}}, "?limit=&offset=", 200},
 	}
