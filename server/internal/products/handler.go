@@ -87,7 +87,7 @@ func AddProductHandler(store ProductStore) http.HandlerFunc {
 			return
 		}
 
-		if err := store.AddProduct(r.Context(), &Product{Name: product.Name, Price: product.Price, Quantity: product.Quantity, CategoryID: product.CategoryID}); err != nil {
+		if err := store.AddProduct(r.Context(), &Product{SKU: product.SKU, Name: product.Name, Price: product.Price, Quantity: product.Quantity, CategoryID: product.CategoryID}); err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
