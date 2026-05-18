@@ -11,7 +11,7 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
 
   const handleSubmit = async () => {
     try {
-      const isEditing = !!product
+      const isEditing = product?.ID !== 0
       const url = isEditing ? `http://localhost:8080/products/${formData.ID}` : "http://localhost:8080/products"
       const res = await fetch(url, {
         method: isEditing ? "PUT" : "POST",
