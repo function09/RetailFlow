@@ -23,7 +23,13 @@ export interface Categories {
   Category: string
 }
 
-export interface Customers {
+export interface ProductFormProps {
+  categories: Categories[]
+  product: Products | null
+  onSuccess: () => void
+}
+
+export interface Customer {
   ID: number,
   FirstName: string
   LastName: string
@@ -31,8 +37,7 @@ export interface Customers {
   IsActive: boolean
 }
 
-export interface ProductFormProps {
-  categories: Categories[]
-  product: Products | null
+export interface CustomersFormProps {
+  customer: Customer | null
   onSuccess: () => void
 }
