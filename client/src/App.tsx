@@ -8,6 +8,7 @@ import { SidebarProvider } from './components/ui/sidebar'
 import Layout from './components/Layout'
 import Products from './pages/Products'
 import Customers from './pages/Customers'
+import CustomerDetail from './pages/CustomerDetail'
 function App() {
   return (
     <>
@@ -22,6 +23,7 @@ function App() {
                 <Route path='/dashboard' element={<DashBoard />} />
                 <Route path='/orders' element={<div />} />
                 <Route path='/customers' element={<Customers />} />
+                <Route path='/customers/:customerID' element={<CustomerDetail />} />
                 <Route path='/products' element={<Products />} />
               </Route>
             </Route>
