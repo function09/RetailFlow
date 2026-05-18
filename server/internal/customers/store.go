@@ -97,7 +97,7 @@ func (s *Store) CreateCustomer(ctx context.Context, cst *Customer) (int, error) 
 }
 
 func (s *Store) RemoveCustomer(ctx context.Context, id int) error {
-	result, err := s.dbGetter(ctx).ExecContext(ctx, "UPDATE customers SET is_active = false WHERE id= $1", id)
+	result, err := s.dbGetter(ctx).ExecContext(ctx, "UPDATE customers SET is_active = false WHERE id = $1", id)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func (s *Store) RemoveCustomer(ctx context.Context, id int) error {
 }
 
 func (s *Store) UpdateCustomer(ctx context.Context, cst *Customer) error {
-	result, err := s.dbGetter(ctx).ExecContext(ctx, "UPDATE customers SET first_name = $1, last_name = $2, email = $3, is_active = $4 WHERE id = $5", cst.FirstName, cst.LastName, cst.Email, cst.IsActive, cst.ID)
+	result, err := s.dbGetter(ctx).ExecContext(ctx, "UPDATE customers SET first_name = $1, last_name = $2, email = $3 WHERE id = $4", cst.FirstName, cst.LastName, cst.Email, cst.ID)
 	if err != nil {
 		return err
 	}
