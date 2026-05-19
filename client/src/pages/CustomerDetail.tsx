@@ -22,7 +22,7 @@ export default function CustomerDetail() {
         customerLoading ? (
           <h1>Loading...</h1>
         ) : customerError ? (
-          <h1>Customer not found</h1>
+          <h1>Failed to load customers</h1>
         ) : (
           <div className="space-y-6">
             <h1 className="text-2xl font-semibold">{customer?.FirstName} {customer?.LastName}</h1>
