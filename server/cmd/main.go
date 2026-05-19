@@ -49,26 +49,39 @@ func main() {
 	orderStore := orders.NewStore(dbGetter)
 
 	ordersService := orders.NewService(orderStore, productsStore, addressesStore, transactor)
+	customerService := customers.NewService(customerStore, orderStore)
 
+	// Auth
 	mux.HandleFunc("POST /auth/register", auth.RegisterUserHandler(authStore))
 	mux.HandleFunc("POST /auth/login", auth.LoginUserHandler(authStore, cfg.JWTSecret))
 	mux.HandleFunc("POST /auth/logout", auth.LogOutHandler)
 	mux.HandleFunc("GET /auth/me", middleware.AuthMiddleware(cfg.JWTSecret, auth.Me()))
+
+	// Products
 	mux.HandleFunc("GET /products", middleware.AuthMiddleware(cfg.JWTSecret, products.GetAllProductsHandler(productsStore)))
 	mux.HandleFunc("GET /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.GetProductHandler(productsStore)))
 	mux.HandleFunc("POST /products", middleware.AuthMiddleware(cfg.JWTSecret, products.AddProductHandler(productsStore)))
-	mux.HandleFunc("DELETE /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.RemoveProductHandler(productsStore)))
 	mux.HandleFunc("PUT /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.UpdateProductHandler(productsStore)))
+	mux.HandleFunc("DELETE /products/{id}", middleware.AuthMiddleware(cfg.JWTSecret, products.RemoveProductHandler(productsStore)))
+
+	// Categories
 	mux.HandleFunc("GET /categories", middleware.AuthMiddleware(cfg.JWTSecret, categories.GetAllCategoriesHandler(categoriesStore)))
+
+	// Customers
 	mux.HandleFunc("GET /customers", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetAllCustomersHandler(customerStore)))
 	mux.HandleFunc("GET /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetCustomerHandler(customerStore)))
 	mux.HandleFunc("POST /customers", middleware.AuthMiddleware(cfg.JWTSecret, customers.CreateCustomerHandler(customerStore)))
-	mux.HandleFunc("PATCH /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.RemoveCustomerHandler(customerStore)))
 	mux.HandleFunc("PUT /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.UpdateCustomerHandler(customerStore)))
+	mux.HandleFunc("PATCH /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.RemoveCustomerHandler(customerStore)))
+	mux.HandleFunc("GET /customers/{id}/orders", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetCustomerOrdersHandler(customerService)))
 	mux.HandleFunc("GET /customers/{id}/addresses", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressesHandler(addressesStore)))
-	mux.HandleFunc("GET /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressHandler(addressesStore)))
 	mux.HandleFunc("POST /customers/{id}/addresses", middleware.AuthMiddleware(cfg.JWTSecret, addresses.AddCustomerAddressHandler(addressesStore)))
+
+	// Addresses
+	mux.HandleFunc("GET /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressHandler(addressesStore)))
 	mux.HandleFunc("DELETE /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.RemoveCustomerAddressHandler(addressesStore)))
+
+	// Orders
 	mux.HandleFunc("GET /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrdersHandler(orderStore)))
 	mux.HandleFunc("GET /orders/{id}", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrderHandler(orderStore)))
 	mux.HandleFunc("POST /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.CreateOrderHandler(ordersService)))
