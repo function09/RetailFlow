@@ -9,7 +9,7 @@ import (
 )
 
 type orderLister interface {
-	GetOrders(ctx context.Context, limit int, offset int) ([]*Order, error)
+	GetOrders(ctx context.Context, limit int, offset int, search string) ([]*Order, error)
 }
 
 type orderGetter interface {
@@ -28,6 +28,7 @@ func GetOrdersHandler(store orderLister) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limitString := r.URL.Query().Get("limit")
 		offsetString := r.URL.Query().Get("offset")
+		searchString := r.URL.Query().Get("search")
 
 		limitInt, err := strconv.Atoi(limitString)
 
@@ -41,7 +42,7 @@ func GetOrdersHandler(store orderLister) http.HandlerFunc {
 			offsetInt = 0
 		}
 
-		orders, err := store.GetOrders(r.Context(), limitInt, offsetInt)
+		orders, err := store.GetOrders(r.Context(), limitInt, offsetInt, searchString)
 
 		if err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)

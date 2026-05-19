@@ -10,7 +10,7 @@ import (
 )
 
 type FakeStore struct {
-	GetOrdersFn         func(ctx context.Context, limit int, offset int) ([]*Order, error)
+	GetOrdersFn         func(ctx context.Context, limit int, offset int, search string) ([]*Order, error)
 	GetOrderFn          func(ctx context.Context, id int) (*Order, error)
 	UpdateOrderStatusFn func(ctx context.Context, id int, status string) error
 }
@@ -19,8 +19,8 @@ type FakeService struct {
 	CreateOrderFn func(ctx context.Context, so SalesOrderInput) error
 }
 
-func (s *FakeStore) GetOrders(ctx context.Context, limit int, offset int) ([]*Order, error) {
-	return s.GetOrdersFn(ctx, limit, offset)
+func (s *FakeStore) GetOrders(ctx context.Context, limit int, offset int, search string) ([]*Order, error) {
+	return s.GetOrdersFn(ctx, limit, offset, search)
 }
 
 func (s *FakeStore) GetOrder(ctx context.Context, id int) (*Order, error) {
@@ -42,24 +42,27 @@ func TestGetOrders(t *testing.T) {
 		param string
 		want  int
 	}{
-		{"Returns a list of orders", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int) ([]*Order, error) {
+		{"Returns a list of orders", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int, search string) ([]*Order, error) {
 			return []*Order{{ID: 1, CustomerID: 1, Status: "pending", Fulfillment: "shipping"}, {ID: 2, CustomerID: 2, Status: "confirmed", Fulfillment: "pickup"}}, nil
 		}}, "?limit=2&offset=0", 200},
-		{"Returns an empty list of orders", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int) ([]*Order, error) {
+		{"Returns an empty list of orders", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int, search string) ([]*Order, error) {
 			return []*Order{}, nil
 		}}, "?limit=2&offset=0", 200},
-		{"DB call fails", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int) ([]*Order, error) {
+		{"DB call fails", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int, search string) ([]*Order, error) {
 			return nil, errors.New("error DB call failed")
 		}}, "?limit=2&offset=0", 500},
-		{"Invalid limit parameter", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int) ([]*Order, error) {
+		{"Invalid limit parameter", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int, search string) ([]*Order, error) {
 			return []*Order{{ID: 1, CustomerID: 1, Status: "pending", Fulfillment: "shipping"}, {ID: 2, CustomerID: 2, Status: "confirmed", Fulfillment: "pickup"}}, nil
 		}}, "?limit=abc&offset=0", 200},
-		{"Invalid offset parameter", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int) ([]*Order, error) {
+		{"Invalid offset parameter", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int, search string) ([]*Order, error) {
 			return []*Order{{ID: 1, CustomerID: 1, Status: "pending", Fulfillment: "shipping"}}, nil
 		}}, "?limit=2&offset=abc", 200},
-		{"Missing limit parameter", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int) ([]*Order, error) {
+		{"Missing limit parameter", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int, search string) ([]*Order, error) {
 			return []*Order{{ID: 1, CustomerID: 1, Status: "pending", Fulfillment: "shipping"}}, nil
 		}}, "?limit=&offset=0", 200},
+		{"Search by customer name", &FakeStore{GetOrdersFn: func(ctx context.Context, limit, offset int, search string) ([]*Order, error) {
+			return []*Order{{ID: 1, CustomerID: 1, FirstName: "Jane", LastName: "Smith", Status: "pending", Fulfillment: "shipping"}}, nil
+		}}, "?limit=20&offset=0&search=jane", 200},
 	}
 
 	for _, e := range tests {

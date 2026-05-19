@@ -12,6 +12,8 @@ import (
 type Order struct {
 	ID          int
 	CustomerID  int
+	FirstName   string
+	LastName    string
 	Status      string
 	Fulfillment string
 	StreetLine1 string
@@ -48,15 +50,26 @@ func NewStore(dbGetter db.DBGetter) *Store {
 }
 
 type OrderStore interface {
-	GetOrders(ctx context.Context, limit int, offset int) ([]*Order, error)
+	GetOrders(ctx context.Context, limit int, offset int, search string) ([]*Order, error)
 	GetOrder(ctx context.Context, id int) (*Order, error)
 	CreateOrder(ctx context.Context, order *Order) (int, error)
 	CreateOrderItems(ctx context.Context, orderItems []*OrderItem) error
 	UpdateOrderStatus(ctx context.Context, id int, status string) error
 }
 
-func (s *Store) GetOrders(ctx context.Context, limit int, offset int) ([]*Order, error) {
-	rows, err := s.dbGetter(ctx).QueryContext(ctx, "SELECT id, customer_id, status, fulfillment, street_line_1, street_line_2, city, state, zip_code, created_at, updated_at FROM orders LIMIT $1 OFFSET $2", limit, offset)
+func (s *Store) GetOrders(ctx context.Context, limit int, offset int, search string) ([]*Order, error) {
+	query := "SELECT orders.id, orders.customer_id, orders.status, orders.fulfillment, orders.street_line_1, orders.street_line_2, orders.city, orders.state, orders.zip_code, orders.created_at, orders.updated_at, customers.first_name, customers.last_name FROM orders INNER JOIN customers ON customers.id = orders.customer_id WHERE 1 = 1"
+
+	args := []any{limit, offset}
+
+	if len(search) != 0 {
+		query += " AND (customers.first_name ILIKE $3 OR customers.last_name ILIKE $3)"
+		args = append(args, "%"+search+"%")
+	}
+
+	query += " LIMIT $1 OFFSET $2"
+
+	rows, err := s.dbGetter(ctx).QueryContext(ctx, query, args...)
 
 	if err != nil {
 		return nil, err
@@ -68,7 +81,7 @@ func (s *Store) GetOrders(ctx context.Context, limit int, offset int) ([]*Order,
 	for rows.Next() {
 		var order Order
 
-		if err := rows.Scan(&order.ID, &order.CustomerID, &order.Status, &order.Fulfillment, &order.StreetLine1, &order.StreetLine2, &order.City, &order.State, &order.ZipCode, &order.CreatedAt, &order.UpdatedAt); err != nil {
+		if err := rows.Scan(&order.ID, &order.CustomerID, &order.Status, &order.Fulfillment, &order.StreetLine1, &order.StreetLine2, &order.City, &order.State, &order.ZipCode, &order.CreatedAt, &order.UpdatedAt, &order.FirstName, &order.LastName); err != nil {
 			return nil, err
 		}
 
