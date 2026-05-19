@@ -41,3 +41,23 @@ export interface CustomersFormProps {
   customer: Customer | null
   onSuccess: () => void
 }
+
+
+export interface Order {
+  ID: number
+  CustomerID: number
+  FirstName: string
+  LastName: string
+  Status: string
+  Fulfillment: string
+  StreetLine1: string
+  StreetLine2: string
+  City: string
+  State: string
+  ZipCode: string
+  CreatedAt: string
+  UpdatedAt: string
+}
+
+
+
