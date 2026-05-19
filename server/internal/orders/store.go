@@ -52,6 +52,7 @@ func NewStore(dbGetter db.DBGetter) *Store {
 type OrderStore interface {
 	GetOrders(ctx context.Context, limit int, offset int, search string) ([]*Order, error)
 	GetOrder(ctx context.Context, id int) (*Order, error)
+	GetOrdersByCustomerID(ctx context.Context, cid int) ([]*Order, error)
 	CreateOrder(ctx context.Context, order *Order) (int, error)
 	CreateOrderItems(ctx context.Context, orderItems []*OrderItem) error
 	UpdateOrderStatus(ctx context.Context, id int, status string) error
@@ -99,6 +100,29 @@ func (s *Store) GetOrder(ctx context.Context, id int) (*Order, error) {
 	}
 
 	return &order, nil
+}
+
+func (s *Store) GetOrdersByCustomerID(ctx context.Context, cid int) ([]*Order, error) {
+	rows, err := s.dbGetter(ctx).QueryContext(ctx, "SELECT id, customer_id, status, fulfillment, street_line_1, street_line_2, city, state, zip_code, created_at, updated_at FROM orders WHERE customer_id=$1", cid)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	orders := []*Order{}
+
+	for rows.Next() {
+		var order Order
+
+		if err := rows.Scan(&order.ID, &order.CustomerID, &order.Status, &order.Fulfillment, &order.StreetLine1, &order.StreetLine2, &order.City, &order.State, &order.ZipCode, &order.CreatedAt, &order.UpdatedAt); err != nil {
+			return nil, err
+		}
+
+		orders = append(orders, &order)
+	}
+
+	return orders, nil
 }
 
 func (s *Store) CreateOrder(ctx context.Context, order *Order) (int, error) {

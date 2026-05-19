@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/function09/order_management_system/server/internal/orders"
 )
 
 type FakeStore struct {
@@ -196,6 +198,54 @@ func TestUpdateCustomer(t *testing.T) {
 			req.SetPathValue("id", e.pathValue)
 
 			handler := UpdateCustomerHandler(e.store)
+			handler(w, req)
+
+			if w.Code != e.want {
+				t.Errorf("Got %d want %d", w.Code, e.want)
+			}
+		})
+	}
+}
+
+type FakeOrderGetter struct {
+	GetOrdersByCustomerIDFn func(ctx context.Context, cid int) ([]*orders.Order, error)
+}
+
+func (f *FakeOrderGetter) GetOrdersByCustomerID(ctx context.Context, cid int) ([]*orders.Order, error) {
+	return f.GetOrdersByCustomerIDFn(ctx, cid)
+}
+
+func TestGetCustomerOrders(t *testing.T) {
+	var tests = []struct {
+		name      string
+		store     CustomerOrderGetter
+		pathValue string
+		want      int
+	}{
+		{"Returns orders for a customer", &FakeOrderGetter{GetOrdersByCustomerIDFn: func(ctx context.Context, cid int) ([]*orders.Order, error) {
+			return []*orders.Order{{ID: 1, CustomerID: 1, Status: "pending"}, {ID: 2, CustomerID: 1, Status: "confirmed"}}, nil
+		}}, "1", 200},
+		{"Returns empty orders list", &FakeOrderGetter{GetOrdersByCustomerIDFn: func(ctx context.Context, cid int) ([]*orders.Order, error) {
+			return []*orders.Order{}, nil
+		}}, "1", 200},
+		{"Customer not found", &FakeOrderGetter{GetOrdersByCustomerIDFn: func(ctx context.Context, cid int) ([]*orders.Order, error) {
+			return nil, sql.ErrNoRows
+		}}, "99", 404},
+		{"DB error", &FakeOrderGetter{GetOrdersByCustomerIDFn: func(ctx context.Context, cid int) ([]*orders.Order, error) {
+			return nil, errors.New("db error")
+		}}, "1", 500},
+		{"Invalid path value", &FakeOrderGetter{GetOrdersByCustomerIDFn: func(ctx context.Context, cid int) ([]*orders.Order, error) {
+			return nil, nil
+		}}, "abc", 400},
+	}
+
+	for _, e := range tests {
+		t.Run(e.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/customers/"+e.pathValue+"/orders", nil)
+			req.SetPathValue("id", e.pathValue)
+			w := httptest.NewRecorder()
+
+			handler := GetCustomerOrdersHandler(e.store)
 			handler(w, req)
 
 			if w.Code != e.want {

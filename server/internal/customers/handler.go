@@ -1,11 +1,15 @@
 package customers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/mail"
 	"strconv"
+
+	"github.com/function09/order_management_system/server/internal/orders"
 )
 
 type CustomerInput struct {
@@ -14,6 +18,10 @@ type CustomerInput struct {
 	LastName  string `json:"lastName"`
 	Email     string `json:"email"`
 	IsActive  bool   `json:"isActive"`
+}
+
+type CustomerOrderGetter interface {
+	GetOrdersByCustomerID(ctx context.Context, cid int) ([]*orders.Order, error)
 }
 
 func GetAllCustomersHandler(store CustomerStore) http.HandlerFunc {
@@ -73,6 +81,32 @@ func GetCustomerHandler(store CustomerStore) http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(customer)
+	}
+}
+
+func GetCustomerOrdersHandler(store CustomerOrderGetter) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.PathValue("id")
+		pathValueInt, err := strconv.Atoi(path)
+
+		if err != nil {
+			http.Error(w, "Invalid path value", http.StatusBadRequest)
+			return
+		}
+
+		orders, err := store.GetOrdersByCustomerID(r.Context(), pathValueInt)
+
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				http.Error(w, "customer not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(orders)
 	}
 }
 
