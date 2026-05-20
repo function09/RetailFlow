@@ -16,7 +16,7 @@ export default function CustomerDetail() {
 
   return (
     <div className="space-y-6">
-      <Button variant="outline" size="sm" onClick={() => navigate(-1)}><ChevronLeft className="h-4 w-4" />Back</Button>
+      <Button variant="outline" size="sm" onClick={() => navigate("/customers")}><ChevronLeft className="h-4 w-4" />Back</Button>
 
       {
         customerLoading ? (
@@ -76,7 +76,7 @@ export default function CustomerDetail() {
                 </TableRow>
               ) : (
                 orders?.map((order) => (
-                  <TableRow key={order.ID}>
+                  <TableRow key={order.ID} onClick={() => navigate('/orders/' + order.ID)} className="cursor-pointer">
                     <TableCell className="font-medium">{order.ID}</TableCell>
                     <TableCell>{order.Status}</TableCell>
                     <TableCell>{order.Fulfillment}</TableCell>

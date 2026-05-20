@@ -12,8 +12,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router"
 
 export default function Orders() {
+  const navigate = useNavigate()
   const [page, setPage] = useState<number>(1)
   const [search, setSearch] = useState<string>("")
   const [debouncedSearch, setDebouncedSearch] = useState<string>("")
@@ -79,7 +81,7 @@ export default function Orders() {
               </TableRow>
             ) : (
               orders?.map((order) => (
-                <TableRow key={order.ID}>
+                <TableRow key={order.ID} onClick={() => navigate('/orders/' + order.ID)} className="cursor-pointer">
                   <TableCell className="font-medium">{order.ID}</TableCell>
                   <TableCell>{order.FirstName} {order.LastName}</TableCell>
                   <TableCell>{order.Status}</TableCell>
