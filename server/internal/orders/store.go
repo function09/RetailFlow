@@ -37,6 +37,7 @@ type OrderItem struct {
 	ID        int
 	OrderID   int
 	ProductID int
+	Name      string
 	Price     int
 	Quantity  int
 }
@@ -52,6 +53,7 @@ func NewStore(dbGetter db.DBGetter) *Store {
 type OrderStore interface {
 	GetOrders(ctx context.Context, limit int, offset int, search string) ([]*Order, error)
 	GetOrder(ctx context.Context, id int) (*Order, error)
+	GetOrderItems(ctx context.Context, id int) ([]*OrderItem, error)
 	GetOrdersByCustomerID(ctx context.Context, cid int) ([]*Order, error)
 	CreateOrder(ctx context.Context, order *Order) (int, error)
 	CreateOrderItems(ctx context.Context, orderItems []*OrderItem) error
@@ -95,11 +97,34 @@ func (s *Store) GetOrders(ctx context.Context, limit int, offset int, search str
 func (s *Store) GetOrder(ctx context.Context, id int) (*Order, error) {
 	var order Order
 
-	if err := s.dbGetter(ctx).QueryRowContext(ctx, "SELECT id, customer_id, status, fulfillment, street_line_1, street_line_2, city, state, zip_code, created_at, updated_at FROM orders WHERE id=$1", id).Scan(&order.ID, &order.CustomerID, &order.Status, &order.Fulfillment, &order.StreetLine1, &order.StreetLine2, &order.City, &order.State, &order.ZipCode, &order.CreatedAt, &order.UpdatedAt); err != nil {
+	if err := s.dbGetter(ctx).QueryRowContext(ctx, "SELECT orders.id, orders.customer_id, orders.status, orders.fulfillment, orders.street_line_1, orders.street_line_2, orders.city, orders.state, orders.zip_code, orders.created_at, orders.updated_at, customers.first_name, customers.last_name FROM orders INNER JOIN customers ON orders.customer_id = customers.id WHERE orders.id=$1", id).Scan(&order.ID, &order.CustomerID, &order.Status, &order.Fulfillment, &order.StreetLine1, &order.StreetLine2, &order.City, &order.State, &order.ZipCode, &order.CreatedAt, &order.UpdatedAt, &order.FirstName, &order.LastName); err != nil {
 		return nil, err
 	}
 
 	return &order, nil
+}
+
+func (s *Store) GetOrderItems(ctx context.Context, id int) ([]*OrderItem, error) {
+	rows, err := s.dbGetter(ctx).QueryContext(ctx, "SELECT order_items.id, order_items.order_id, order_items.product_id, products.name, order_items.price, order_items.quantity FROM order_items INNER JOIN products ON order_items.product_id = products.id WHERE order_items.order_id = $1", id)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []*OrderItem{}
+
+	for rows.Next() {
+		var item OrderItem
+
+		if err := rows.Scan(&item.ID, &item.OrderID, &item.ProductID, &item.Name, &item.Price, &item.Quantity); err != nil {
+			return nil, err
+		}
+
+		items = append(items, &item)
+	}
+
+	return items, nil
 }
 
 func (s *Store) GetOrdersByCustomerID(ctx context.Context, cid int) ([]*Order, error) {

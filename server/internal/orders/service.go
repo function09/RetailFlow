@@ -30,6 +30,11 @@ type SalesOrderInput struct {
 	Address     *AddressInput     `json:"address"`
 }
 
+type OrderDetails struct {
+	Order      *Order
+	OrderItems []*OrderItem
+}
+
 type ProductStore interface {
 	GetProduct(ctx context.Context, id int) (*products.Product, error)
 	UpdateProduct(ctx context.Context, p *products.Product) error
@@ -48,6 +53,23 @@ type Service struct {
 
 func NewService(orderStore OrderStore, productStore ProductStore, addressStore AddressStore, transactor db.Transactor) *Service {
 	return &Service{orderStore: orderStore, productsStore: productStore, addressStore: addressStore, transactor: transactor}
+}
+
+func (s *Service) GetOrderDetails(ctx context.Context, id int) (*OrderDetails, error) {
+	order, err := s.orderStore.GetOrder(ctx, id)
+
+	if err != nil {
+		return nil, fmt.Errorf("error fetching order %d: %w", id, err)
+	}
+
+	orderItems, err := s.orderStore.GetOrderItems(ctx, id)
+
+	if err != nil {
+		return nil, fmt.Errorf("error fetching order items for order %d: %w", id, err)
+	}
+
+	return &OrderDetails{Order: order, OrderItems: orderItems}, nil
+
 }
 func (s *Service) CreateOrder(ctx context.Context, so SalesOrderInput) error {
 	err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {

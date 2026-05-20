@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 )
@@ -22,6 +23,10 @@ type orderCreator interface {
 
 type orderStatusUpdater interface {
 	UpdateOrderStatus(ctx context.Context, id int, status string) error
+}
+
+type orderDetailsGetter interface {
+	GetOrderDetails(ctx context.Context, id int) (*OrderDetails, error)
 }
 
 func GetOrdersHandler(store orderLister) http.HandlerFunc {
@@ -103,6 +108,35 @@ func CreateOrderHandler(store orderCreator) http.HandlerFunc {
 		w.WriteHeader(http.StatusCreated)
 	}
 
+}
+
+func GetOrderDetailsHandler(service orderDetailsGetter) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+
+		idInt, err := strconv.Atoi(id)
+
+		if err != nil {
+			http.Error(w, "invalid path value", http.StatusBadRequest)
+			return
+		}
+
+		orderDetails, err := service.GetOrderDetails(r.Context(), idInt)
+
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				http.Error(w, "order not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(orderDetails); err != nil {
+			http.Error(w, "failed to encode response", http.StatusInternalServerError)
+			return
+		}
+	}
 }
 
 func UpdateOrderStatusHandler(store orderStatusUpdater) http.HandlerFunc {

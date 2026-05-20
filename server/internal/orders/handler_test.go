@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -16,7 +17,8 @@ type FakeStore struct {
 }
 
 type FakeService struct {
-	CreateOrderFn func(ctx context.Context, so SalesOrderInput) error
+	CreateOrderFn      func(ctx context.Context, so SalesOrderInput) error
+	GetOrderDetailsFn  func(ctx context.Context, id int) (*OrderDetails, error)
 }
 
 func (s *FakeStore) GetOrders(ctx context.Context, limit int, offset int, search string) ([]*Order, error) {
@@ -33,6 +35,10 @@ func (s *FakeStore) UpdateOrderStatus(ctx context.Context, id int, status string
 
 func (s *FakeService) CreateOrder(ctx context.Context, so SalesOrderInput) error {
 	return s.CreateOrderFn(ctx, so)
+}
+
+func (s *FakeService) GetOrderDetails(ctx context.Context, id int) (*OrderDetails, error) {
+	return s.GetOrderDetailsFn(ctx, id)
 }
 
 func TestGetOrders(t *testing.T) {
@@ -151,6 +157,44 @@ func TestUpdateOrderStatus(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			handler := UpdateOrderStatusHandler(e.store)
+
+			handler(w, req)
+
+			if w.Code != e.want {
+				t.Errorf("Got %d want %d", w.Code, e.want)
+			}
+		})
+	}
+}
+
+func TestGetOrderDetails(t *testing.T) {
+	var tests = []struct {
+		name    string
+		service orderDetailsGetter
+		id      string
+		want    int
+	}{
+		{"Returns order details", &FakeService{GetOrderDetailsFn: func(ctx context.Context, id int) (*OrderDetails, error) {
+			return &OrderDetails{Order: &Order{ID: 1}, OrderItems: []*OrderItem{}}, nil
+		}}, "1", 200},
+		{"Order not found", &FakeService{GetOrderDetailsFn: func(ctx context.Context, id int) (*OrderDetails, error) {
+			return nil, fmt.Errorf("error fetching order %d: %w", id, sql.ErrNoRows)
+		}}, "99", 404},
+		{"Service returns an error", &FakeService{GetOrderDetailsFn: func(ctx context.Context, id int) (*OrderDetails, error) {
+			return nil, errors.New("service error")
+		}}, "1", 500},
+		{"Invalid order ID", &FakeService{GetOrderDetailsFn: func(ctx context.Context, id int) (*OrderDetails, error) {
+			return nil, nil
+		}}, "abc", 400},
+	}
+
+	for _, e := range tests {
+		t.Run(e.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/orders/"+e.id+"/details", nil)
+			req.SetPathValue("id", e.id)
+			w := httptest.NewRecorder()
+
+			handler := GetOrderDetailsHandler(e.service)
 
 			handler(w, req)
 
