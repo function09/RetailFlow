@@ -59,5 +59,19 @@ export interface Order {
   UpdatedAt: string
 }
 
+export interface OrderItem {
+  ID: number
+  OrderID: number
+  ProductID: number
+  Name: string
+  Price: number
+  Quantity: number
+}
+
+export interface OrderDetails {
+  Order: Order
+  OrderItems: OrderItem[]
+}
+
 
 
