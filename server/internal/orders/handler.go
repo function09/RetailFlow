@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -18,7 +19,7 @@ type orderGetter interface {
 }
 
 type orderCreator interface {
-	CreateOrder(ctx context.Context, so SalesOrderInput) error
+	CreateOrder(ctx context.Context, so SalesOrderInput) (int, error)
 }
 
 type orderStatusUpdater interface {
@@ -100,12 +101,18 @@ func CreateOrderHandler(store orderCreator) http.HandlerFunc {
 			return
 		}
 
-		if err := store.CreateOrder(r.Context(), salesOrder); err != nil {
+		id, err := store.CreateOrder(r.Context(), salesOrder)
+		if err != nil {
+			fmt.Printf("error: %s", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(struct {
+			ID int `json:"ID"`
+		}{ID: id})
 	}
 
 }

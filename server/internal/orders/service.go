@@ -71,7 +71,8 @@ func (s *Service) GetOrderDetails(ctx context.Context, id int) (*OrderDetails, e
 	return &OrderDetails{Order: order, OrderItems: orderItems}, nil
 
 }
-func (s *Service) CreateOrder(ctx context.Context, so SalesOrderInput) error {
+func (s *Service) CreateOrder(ctx context.Context, so SalesOrderInput) (int, error) {
+	var createdID int
 	err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 		if so.Address == nil {
 			addresses, err := s.addressStore.GetCustomerAddresses(ctx, so.CustomerID)
@@ -149,7 +150,9 @@ func (s *Service) CreateOrder(ctx context.Context, so SalesOrderInput) error {
 		if err != nil {
 			return fmt.Errorf("error adding order item: %w", err)
 		}
+
+		createdID = orderID
 		return nil
 	})
-	return err
+	return createdID, err
 }
