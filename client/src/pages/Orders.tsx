@@ -43,6 +43,7 @@ export default function Orders() {
           onChange={e => setSearch(e.target.value)}
           className="max-w-sm"
         />
+        <Button onClick={() => navigate('/orders/new')}>Create Order</Button>
       </div>
 
       <div className="rounded-md border">
