@@ -73,5 +73,11 @@ export interface OrderDetails {
   OrderItems: OrderItem[]
 }
 
+export interface CreateOrderPayload {
+  customer_id: number
+  fulfillment: string
+  order_items: { product_id: number, quantity: number }[]
+}
+
 
 
