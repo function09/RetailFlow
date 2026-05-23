@@ -85,7 +85,7 @@ func main() {
 	mux.HandleFunc("GET /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrdersHandler(orderStore)))
 	mux.HandleFunc("GET /orders/{id}", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrderHandler(orderStore)))
 	mux.HandleFunc("POST /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.CreateOrderHandler(ordersService)))
-	mux.HandleFunc("PUT /orders/{id}/status", middleware.AuthMiddleware(cfg.JWTSecret, orders.UpdateOrderStatusHandler(orderStore)))
+	mux.HandleFunc("PATCH /orders/{id}/status", middleware.AuthMiddleware(cfg.JWTSecret, orders.UpdateOrderStatusHandler(orderStore)))
 	mux.HandleFunc("GET /orders/{id}/details", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrderDetailsHandler(ordersService)))
 
 	go func() {

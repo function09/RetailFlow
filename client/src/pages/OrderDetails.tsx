@@ -1,16 +1,25 @@
-import { getOrderDetails } from "@/api/orders";
-import { useQuery } from "@tanstack/react-query";
+import { getOrderDetails, updateOrderStatus } from "@/api/orders";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft } from "lucide-react";
 
 export default function OrderDetails() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
   const { orderID } = useParams()
   const { data: orderDetails, isLoading, isError } = useQuery({ queryKey: ["orderDetails", orderID], queryFn: () => getOrderDetails(orderID!), enabled: !!orderID })
+
+  const mutation = useMutation({
+    mutationFn: (newStatus: string) => updateOrderStatus(Number(orderID), newStatus), onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orderDetails", orderID] })
+    }
+  })
 
   return (
     <div className="space-y-6">
@@ -41,7 +50,22 @@ export default function OrderDetails() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <p className="capitalize">{orderDetails?.Order.Status}</p>
+                  <Select
+                    value={orderDetails?.Order.Status}
+                    onValueChange={(val) => mutation.mutate(val)}
+                    disabled={mutation.isPending}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="shipped">Shipped</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Fulfillment</p>
