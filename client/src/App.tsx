@@ -12,6 +12,7 @@ import Customers from './pages/Customers'
 import CustomerDetail from './pages/CustomerDetail'
 import Orders from './pages/Orders'
 import OrderDetails from './pages/OrderDetails'
+import CreateOrder from './pages/CreateOrder'
 
 const queryClient = new QueryClient()
 
@@ -32,6 +33,7 @@ function App() {
                   <Route path='/customers' element={<Customers />} />
                   <Route path='/customers/:customerID' element={<CustomerDetail />} />
                   <Route path='/products' element={<Products />} />
+                  <Route path='/orders/new' element={<CreateOrder />} />
                   <Route path='/orders/:orderID' element={<OrderDetails />} />
                 </Route>
               </Route>
