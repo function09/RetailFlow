@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type { Customers, CustomersFormProps } from "@/types/types"
+import type { Customer, CustomersFormProps } from "@/types/types"
 import { useState } from "react"
+import { toast } from "sonner"
 
 export default function CustomerForm({ customer, onSuccess }: CustomersFormProps) {
-  const [formData, setFormData] = useState<Customers>(
+  const [formData, setFormData] = useState<Customer>(
     customer ?? { ID: 0, FirstName: "", LastName: "", Email: "", IsActive: true }
   )
 
@@ -23,11 +24,12 @@ export default function CustomerForm({ customer, onSuccess }: CustomersFormProps
         }),
       })
       if (!res.ok) {
-        throw new Error("Failed to save customer")
+        const message = await res.text()
+        throw new Error(message)
       }
       onSuccess()
     } catch (e) {
-      console.log(e)
+      toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
     }
   }
 

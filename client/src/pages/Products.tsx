@@ -8,6 +8,7 @@ import type { Products, Categories } from "@/types/types"
 import { useEffect, useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from "lucide-react"
 import ProductForm from "@/components/ProductForm"
+import { toast } from "sonner"
 
 export default function Products() {
   const [products, setProducts] = useState<Products[]>([])
@@ -29,12 +30,13 @@ export default function Products() {
       })
 
       if (!res.ok) {
-        throw new Error("Failed to delete product")
+        const message = await res.text()
+        throw new Error(message)
       }
 
       setRefresh(r => r + 1)
     } catch (e) {
-      console.log(e)
+      toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
     }
   }
 
@@ -55,16 +57,17 @@ export default function Products() {
         const options = { credentials: "include" as const, headers: { "Content-Type": "application/json" } }
         const url = "http://localhost:8080"
 
-        const productsRes = await fetch(url + `/products?limit=20&offset=${(page - 1) * 20}&search=${debouncedSearch}&sort=${sort}&order=${order}`, options)
+        const res = await fetch(url + `/products?limit=20&offset=${(page - 1) * 20}&search=${debouncedSearch}&sort=${sort}&order=${order}`, options)
 
-        if (!productsRes.ok) {
-          throw new Error("Failed to fetch products")
+        if (!res.ok) {
+          const message = await res.text()
+          throw new Error(message)
         }
 
-        const productsJSON = await productsRes.json()
-        setProducts(productsJSON)
+        const resJSON = await res.json()
+        setProducts(resJSON)
       } catch (e) {
-        console.log(e)
+        toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
       } finally {
         setLoading(false)
       }
@@ -87,16 +90,17 @@ export default function Products() {
         const options = { credentials: "include" as const, headers: { "Content-Type": "application/json" } }
         const url = "http://localhost:8080"
 
-        const categoriesRes = await fetch(url + "/categories", options)
+        const res = await fetch(url + "/categories", options)
 
-        if (!categoriesRes.ok) {
-          throw new Error("Failed to fetch categories")
+        if (!res.ok) {
+          const message = await res.text()
+          throw new Error(message)
         }
 
-        const categoriesJSON = await categoriesRes.json()
-        setCategories(categoriesJSON)
+        const resJSON = await res.json()
+        setCategories(resJSON)
       } catch (e) {
-        console.log(e)
+        toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
       }
     }
     fetchCategories()

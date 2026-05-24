@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft } from "lucide-react";
+import { toast } from "sonner";
 
 export default function OrderDetails() {
   const navigate = useNavigate()
@@ -18,7 +19,8 @@ export default function OrderDetails() {
   const mutation = useMutation({
     mutationFn: (newStatus: string) => updateOrderStatus(Number(orderID), newStatus), onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orderDetails", orderID] })
-    }
+    },
+    onError: (error) => toast.error(error.message)
   })
 
   return (

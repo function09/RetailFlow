@@ -9,6 +9,7 @@ import type { Customer } from "@/types/types";
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export default function Customers() {
   const navigate = useNavigate()
@@ -31,16 +32,17 @@ export default function Customers() {
         const options = { credentials: "include" as const, headers: { "Content-Type": "application/json" } }
         const url = "http://localhost:8080"
 
-        const customersRes = await fetch(url + `/customers?limit=20&offset=${(page - 1) * 20}&search=${debouncedSearch}&sort=${sort}&order=${order}`, options)
+        const res = await fetch(url + `/customers?limit=20&offset=${(page - 1) * 20}&search=${debouncedSearch}&sort=${sort}&order=${order}`, options)
 
-        if (!customersRes.ok) {
-          throw new Error("Failed to fetch customers")
+        if (!res.ok) {
+          const message = await res.text()
+          throw new Error(message)
         }
 
-        const customersJSON = await customersRes.json()
+        const customersJSON = await res.json()
         setCustomers(customersJSON)
       } catch (e) {
-        console.log(e)
+        toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
       } finally {
         setLoading(false)
       }
@@ -74,12 +76,13 @@ export default function Customers() {
       })
 
       if (!res.ok) {
-        throw new Error("Failed to delete customer")
+        const message = await res.text()
+        throw new Error(message)
       }
 
       setRefresh(r => r + 1)
     } catch (e) {
-      console.log(e)
+      toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
     }
   }
 

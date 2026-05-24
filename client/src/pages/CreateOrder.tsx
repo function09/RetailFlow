@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router"
+import { toast } from "sonner"
 
 export default function CreateOrder() {
   const navigate = useNavigate()
@@ -31,7 +32,8 @@ export default function CreateOrder() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] })
       navigate(`/orders/${data.ID}`)
-    }
+    },
+    onError: (error) => toast.error(error.message)
   })
 
   const handleSubmit = () => {

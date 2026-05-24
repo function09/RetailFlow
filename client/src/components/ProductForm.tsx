@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ProductFormProps, Products, } from "@/types/types"
 import { useState } from "react"
+import { toast } from "sonner"
 
 function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
   const [formData, setFormData] = useState<Products>(
@@ -26,11 +27,12 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
         }),
       })
       if (!res.ok) {
-        throw new Error("Failed to save product")
+        const message = await res.text()
+        throw new Error(message)
       }
       onSuccess()
     } catch (e) {
-      console.log(e)
+      toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
     }
   }
 
