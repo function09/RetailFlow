@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 )
@@ -51,11 +51,13 @@ func GetOrdersHandler(store orderLister) http.HandlerFunc {
 		orders, err := store.GetOrders(r.Context(), limitInt, offsetInt, searchString)
 
 		if err != nil {
+			slog.Error("failed to get orders", "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
 		if err := json.NewEncoder(w).Encode(orders); err != nil {
+			slog.Error("failed to encode orders response", "error", err)
 			http.Error(w, "failed to encode response", http.StatusInternalServerError)
 			return
 		}
@@ -76,16 +78,17 @@ func GetOrderHandler(store orderGetter) http.HandlerFunc {
 		order, err := store.GetOrder(r.Context(), idInt)
 
 		if err != nil {
-
 			if err == sql.ErrNoRows {
 				http.Error(w, "Order not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("failed to get order", "id", idInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
 		if err := json.NewEncoder(w).Encode(order); err != nil {
+			slog.Error("failed to encode order response", "error", err)
 			http.Error(w, "failed to encode response", http.StatusInternalServerError)
 			return
 		}
@@ -103,7 +106,7 @@ func CreateOrderHandler(store orderCreator) http.HandlerFunc {
 
 		id, err := store.CreateOrder(r.Context(), salesOrder)
 		if err != nil {
-			fmt.Printf("error: %s", err)
+			slog.Error("failed to create order", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -114,7 +117,6 @@ func CreateOrderHandler(store orderCreator) http.HandlerFunc {
 			ID int `json:"ID"`
 		}{ID: id})
 	}
-
 }
 
 func GetOrderDetailsHandler(service orderDetailsGetter) http.HandlerFunc {
@@ -135,11 +137,13 @@ func GetOrderDetailsHandler(service orderDetailsGetter) http.HandlerFunc {
 				http.Error(w, "order not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("failed to get order details", "id", idInt, "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
 
 		if err := json.NewEncoder(w).Encode(orderDetails); err != nil {
+			slog.Error("failed to encode order details response", "error", err)
 			http.Error(w, "failed to encode response", http.StatusInternalServerError)
 			return
 		}
@@ -169,6 +173,7 @@ func UpdateOrderStatusHandler(store orderStatusUpdater) http.HandlerFunc {
 				http.Error(w, "order not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("failed to update order status", "id", idInt, "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}

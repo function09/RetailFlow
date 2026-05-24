@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"time"
 )
@@ -45,6 +46,7 @@ func RegisterUserHandler(store AuthStore) http.HandlerFunc {
 		hashedPassword, err := HashPassword(input.Password)
 
 		if err != nil {
+			slog.Error("failed to hash password during registration", "error", err)
 			http.Error(w, "Error creating new user", http.StatusInternalServerError)
 			return
 		}
@@ -55,6 +57,7 @@ func RegisterUserHandler(store AuthStore) http.HandlerFunc {
 		userRegister.CreatedAt = time.Now()
 
 		if err := store.RegisterUser(r.Context(), &userRegister); err != nil {
+			slog.Error("failed to register user", "username", input.Username, "error", err)
 			http.Error(w, "Error creating new user", http.StatusInternalServerError)
 			return
 		}
@@ -92,6 +95,7 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 
 		token, err := GenerateToken(user.Username, secret, time.Hour)
 		if err != nil {
+			slog.Error("failed to generate token", "username", input.Username, "error", err)
 			http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 			return
 		}

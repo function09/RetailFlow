@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/mail"
 	"strconv"
@@ -48,6 +49,7 @@ func GetAllCustomersHandler(store CustomerStore) http.HandlerFunc {
 		customers, err := store.GetAllCustomers(r.Context(), limitInt, offsetInt, search, sort, order)
 
 		if err != nil {
+			slog.Error("Failed to get all customers", "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -75,6 +77,7 @@ func GetCustomerHandler(store CustomerStore) http.HandlerFunc {
 				http.Error(w, "Customer not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("Failed to get customer", "id", pathValueInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -101,6 +104,7 @@ func GetCustomerOrdersHandler(store CustomerOrderGetter) http.HandlerFunc {
 				http.Error(w, "customer not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("Failed to get customer orders", "id", pathValueInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -133,6 +137,7 @@ func CreateCustomerHandler(store CustomerStore) http.HandlerFunc {
 		id, err := store.CreateCustomer(r.Context(), &Customer{FirstName: customer.FirstName, LastName: customer.LastName, Email: e.Address})
 
 		if err != nil {
+			slog.Error("Failed to create customer", "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -175,6 +180,7 @@ func UpdateCustomerHandler(store CustomerStore) http.HandlerFunc {
 				http.Error(w, "Customer not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("Failed to update customer", "id", pathValueInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -198,6 +204,7 @@ func RemoveCustomerHandler(store CustomerStore) http.HandlerFunc {
 				http.Error(w, "Customer not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("Failed to deactivate customer", "id", pathValueInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}

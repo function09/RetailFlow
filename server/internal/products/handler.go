@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -45,6 +46,7 @@ func GetAllProductsHandler(store ProductStore) http.HandlerFunc {
 		products, err := store.GetAllProducts(r.Context(), limitInt, offsetInt, searchString, sortString, orderString)
 
 		if err != nil {
+			slog.Error("failed to get products", "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -67,10 +69,10 @@ func GetProductHandler(store ProductStore) http.HandlerFunc {
 
 		if err != nil {
 			if err == sql.ErrNoRows {
-
 				http.Error(w, "Product not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("failed to get product", "id", pathValueInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -88,6 +90,7 @@ func AddProductHandler(store ProductStore) http.HandlerFunc {
 		}
 
 		if err := store.AddProduct(r.Context(), &Product{SKU: product.SKU, Name: product.Name, Price: product.Price, Quantity: product.Quantity, CategoryID: product.CategoryID}); err != nil {
+			slog.Error("failed to add product", "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -115,10 +118,11 @@ func RemoveProductHandler(store ProductStore) http.HandlerFunc {
 			}
 
 			if errors.As(err, &pqErr) && pqErr.Code == "23503" {
-				http.Error(w, "Conflict", http.StatusConflict)
+				http.Error(w, "Cannot delete product — it is referenced by existing orders", http.StatusConflict)
 				return
 			}
 
+			slog.Error("failed to remove product", "id", pathValueInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -147,6 +151,7 @@ func UpdateProductHandler(store ProductStore) http.HandlerFunc {
 				http.Error(w, "Product not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("failed to update product", "id", pathValueInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}

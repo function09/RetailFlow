@@ -2,6 +2,7 @@ package categories
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 )
 
@@ -15,6 +16,7 @@ func GetAllCategoriesHandler(store CategoriesStore) http.HandlerFunc {
 		products, err := store.GetAllCategories(r.Context())
 
 		if err != nil {
+			slog.Error("failed to get categories", "error", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}

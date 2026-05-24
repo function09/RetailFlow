@@ -3,6 +3,7 @@ package addresses
 import (
 	"database/sql"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 )
@@ -31,6 +32,7 @@ func GetCustomerAddressesHandler(store AddressStore) http.HandlerFunc {
 		addresses, err := store.GetCustomerAddresses(req.Context(), idInt)
 
 		if err != nil {
+			slog.Error("failed to get customer addresses", "customer_id", idInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -59,7 +61,7 @@ func GetCustomerAddressHandler(store AddressStore) http.HandlerFunc {
 				http.Error(w, "Address not found", http.StatusNotFound)
 				return
 			}
-
+			slog.Error("failed to get customer address", "id", idInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -117,6 +119,7 @@ func AddCustomerAddressHandler(store AddressStore) http.HandlerFunc {
 		aid, err := store.AddCustomerAddress(r.Context(), &Address{StreetLine1: addressInput.StreetLine1, StreetLine2: addressInput.StreetLine2, City: addressInput.City, State: addressInput.State, ZipCode: addressInput.ZipCode, AddressType: addressInput.AddressType, IsDefault: addressInput.IsDefault, CustomerID: cidInt})
 
 		if err != nil {
+			slog.Error("failed to add customer address", "customer_id", cidInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
@@ -142,6 +145,7 @@ func RemoveCustomerAddressHandler(store AddressStore) http.HandlerFunc {
 				http.Error(w, "Address not found", http.StatusNotFound)
 				return
 			}
+			slog.Error("failed to remove customer address", "id", aidInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
