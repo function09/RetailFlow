@@ -19,6 +19,7 @@ export default function OrderDetails() {
   const mutation = useMutation({
     mutationFn: (newStatus: string) => updateOrderStatus(Number(orderID), newStatus), onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orderDetails", orderID] })
+      toast.success("Order status updated")
     },
     onError: (error) => toast.error(error.message)
   })
