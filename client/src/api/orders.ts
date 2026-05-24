@@ -1,12 +1,13 @@
 import type { Order, OrderDetails, CreateOrderPayload } from "../types/types"
 
-const BASE_URL = "http://localhost:8080"
+const BASE_URL = import.meta.env.VITE_API_URL
 
 export async function getOrders(limit: number, offset: number, search: string): Promise<Order[]> {
   const res = await fetch(`${BASE_URL}/orders?limit=${limit}&offset=${offset}&search=${search}`, { credentials: "include" })
 
   if (!res.ok) {
-    throw new Error("Failed to fetch orders")
+    const message = await res.text()
+    throw new Error(message)
   }
 
   return res.json()
@@ -21,7 +22,8 @@ export async function updateOrderStatus(id: number, status: string): Promise<voi
   })
 
   if (!res.ok) {
-    throw new Error("Failed to update order status")
+    const message = await res.text()
+    throw new Error(message)
   }
 }
 
@@ -34,7 +36,8 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   })
 
   if (!res.ok) {
-    throw new Error("Failed to create order")
+    const message = await res.text()
+    throw new Error(message)
   }
 
   return res.json()
@@ -44,7 +47,8 @@ export async function getOrderDetails(id: string): Promise<OrderDetails> {
   const res = await fetch(`${BASE_URL}/orders/${id}/details`, { credentials: "include" })
 
   if (!res.ok) {
-    throw new Error("Failed to fetch order details")
+    const message = await res.text()
+    throw new Error(message)
   }
 
   return res.json()
