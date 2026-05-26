@@ -65,6 +65,7 @@ export default function OrderDetails() {
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="confirmed">Confirmed</SelectItem>
                       <SelectItem value="shipped">Shipped</SelectItem>
+                      <SelectItem value="pickedup">Picked-up</SelectItem>
                       <SelectItem value="delivered">Delivered</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
