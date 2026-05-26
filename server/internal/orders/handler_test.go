@@ -17,8 +17,8 @@ type FakeStore struct {
 }
 
 type FakeService struct {
-	CreateOrderFn      func(ctx context.Context, so SalesOrderInput) error
-	GetOrderDetailsFn  func(ctx context.Context, id int) (*OrderDetails, error)
+	CreateOrderFn     func(ctx context.Context, so SalesOrderInput) (int, error)
+	GetOrderDetailsFn func(ctx context.Context, id int) (*OrderDetails, error)
 }
 
 func (s *FakeStore) GetOrders(ctx context.Context, limit int, offset int, search string) ([]*Order, error) {
@@ -33,7 +33,7 @@ func (s *FakeStore) UpdateOrderStatus(ctx context.Context, id int, status string
 	return s.UpdateOrderStatusFn(ctx, id, status)
 }
 
-func (s *FakeService) CreateOrder(ctx context.Context, so SalesOrderInput) error {
+func (s *FakeService) CreateOrder(ctx context.Context, so SalesOrderInput) (int, error) {
 	return s.CreateOrderFn(ctx, so)
 }
 
@@ -95,14 +95,14 @@ func TestCreateOrder(t *testing.T) {
 		body    string
 		want    int
 	}{
-		{"Successfully creates an order", &FakeService{CreateOrderFn: func(ctx context.Context, so SalesOrderInput) error {
-			return nil
+		{"Successfully creates an order", &FakeService{CreateOrderFn: func(ctx context.Context, so SalesOrderInput) (int, error) {
+			return 1, nil
 		}}, `{"customer_id":1,"fulfillment":"shipping","order_items":[{"product_id":1,"quantity":2}]}`, 201},
-		{"Service returns an error", &FakeService{CreateOrderFn: func(ctx context.Context, so SalesOrderInput) error {
-			return errors.New("service error")
+		{"Service returns an error", &FakeService{CreateOrderFn: func(ctx context.Context, so SalesOrderInput) (int, error) {
+			return 0, errors.New("service error")
 		}}, `{"customer_id":1,"fulfillment":"shipping","order_items":[{"product_id":1,"quantity":2}]}`, 500},
-		{"Malformed JSON body", &FakeService{CreateOrderFn: func(ctx context.Context, so SalesOrderInput) error {
-			return nil
+		{"Malformed JSON body", &FakeService{CreateOrderFn: func(ctx context.Context, so SalesOrderInput) (int, error) {
+			return 0, nil
 		}}, `{invalid json}`, 400},
 	}
 

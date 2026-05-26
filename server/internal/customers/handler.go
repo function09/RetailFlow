@@ -25,6 +25,10 @@ type CustomerOrderGetter interface {
 	GetOrdersByCustomerID(ctx context.Context, cid int) ([]*orders.Order, error)
 }
 
+type CustomerRemover interface {
+	DeactivateCustomer(ctx context.Context, cid int) error
+}
+
 func GetAllCustomersHandler(store CustomerStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limitString := r.URL.Query().Get("limit")
@@ -189,7 +193,7 @@ func UpdateCustomerHandler(store CustomerStore) http.HandlerFunc {
 	}
 }
 
-func RemoveCustomerHandler(store CustomerStore) http.HandlerFunc {
+func RemoveCustomerHandler(service CustomerRemover) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		pathValue := r.PathValue("id")
@@ -199,11 +203,8 @@ func RemoveCustomerHandler(store CustomerStore) http.HandlerFunc {
 			http.Error(w, "Invalid path value", http.StatusBadRequest)
 			return
 		}
-		if err := store.RemoveCustomer(r.Context(), pathValueInt); err != nil {
-			if err == sql.ErrNoRows {
-				http.Error(w, "Customer not found", http.StatusNotFound)
-				return
-			}
+
+		if err := service.DeactivateCustomer(r.Context(), pathValueInt); err != nil {
 			slog.Error("Failed to deactivate customer", "id", pathValueInt, "error", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return

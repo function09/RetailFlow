@@ -29,6 +29,7 @@ var validStatuses = map[string]bool{
 	"pending":   true,
 	"confirmed": true,
 	"shipped":   true,
+	"pickedup":  true,
 	"delivered": true,
 	"cancelled": true,
 }
@@ -58,6 +59,7 @@ type OrderStore interface {
 	CreateOrder(ctx context.Context, order *Order) (int, error)
 	CreateOrderItems(ctx context.Context, orderItems []*OrderItem) error
 	UpdateOrderStatus(ctx context.Context, id int, status string) error
+	CancelOrdersByCustomerID(ctx context.Context, customerID int) error
 }
 
 func (s *Store) GetOrders(ctx context.Context, limit int, offset int, search string) ([]*Order, error) {
@@ -187,6 +189,17 @@ func (s *Store) UpdateOrderStatus(ctx context.Context, id int, status string) er
 
 	if rows == 0 {
 		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
+func (s *Store) CancelOrdersByCustomerID(ctx context.Context, cid int) error {
+	query := "UPDATE orders SET status='cancelled' WHERE customer_id=$1 AND status NOT IN ('delivered', 'pickedup', 'cancelled')"
+
+	_, err := s.dbGetter(ctx).ExecContext(ctx, query, cid)
+	if err != nil {
+		return err
 	}
 
 	return nil

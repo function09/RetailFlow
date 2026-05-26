@@ -49,7 +49,7 @@ func main() {
 	orderStore := orders.NewStore(dbGetter)
 
 	ordersService := orders.NewService(orderStore, productsStore, addressesStore, transactor)
-	customerService := customers.NewService(customerStore, orderStore)
+	customerService := customers.NewService(customerStore, orderStore, transactor)
 
 	// Auth
 	mux.HandleFunc("POST /auth/register", auth.RegisterUserHandler(authStore))
@@ -72,7 +72,7 @@ func main() {
 	mux.HandleFunc("GET /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetCustomerHandler(customerStore)))
 	mux.HandleFunc("POST /customers", middleware.AuthMiddleware(cfg.JWTSecret, customers.CreateCustomerHandler(customerStore)))
 	mux.HandleFunc("PUT /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.UpdateCustomerHandler(customerStore)))
-	mux.HandleFunc("PATCH /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.RemoveCustomerHandler(customerStore)))
+	mux.HandleFunc("PATCH /customers/{id}", middleware.AuthMiddleware(cfg.JWTSecret, customers.RemoveCustomerHandler(customerService)))
 	mux.HandleFunc("GET /customers/{id}/orders", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetCustomerOrdersHandler(customerService)))
 	mux.HandleFunc("GET /customers/{id}/addresses", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressesHandler(addressesStore)))
 	mux.HandleFunc("POST /customers/{id}/addresses", middleware.AuthMiddleware(cfg.JWTSecret, addresses.AddCustomerAddressHandler(addressesStore)))

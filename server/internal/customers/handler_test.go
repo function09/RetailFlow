@@ -255,28 +255,32 @@ func TestGetCustomerOrders(t *testing.T) {
 	}
 }
 
+type FakeCustomerRemover struct {
+	DeactivateCustomerFn func(ctx context.Context, cid int) error
+}
+
+func (f *FakeCustomerRemover) DeactivateCustomer(ctx context.Context, cid int) error {
+	return f.DeactivateCustomerFn(ctx, cid)
+}
+
 func TestRemoveCustomer(t *testing.T) {
 	var tests = []struct {
 		name      string
-		store     CustomerStore
+		service   CustomerRemover
 		pathValue string
 		want      int
 	}{
 		{
-			"Customer status changed to inactive", &FakeStore{RemoveCustomerFn: func(ctx context.Context, id int) error {
+			"Customer deactivated successfully", &FakeCustomerRemover{DeactivateCustomerFn: func(ctx context.Context, cid int) error {
 				return nil
 			}}, "1", 200,
 		}, {
-			"Invalid/No ID", &FakeStore{RemoveCustomerFn: func(ctx context.Context, id int) error {
+			"Invalid/No ID", &FakeCustomerRemover{DeactivateCustomerFn: func(ctx context.Context, cid int) error {
 				return nil
 			}}, "abc", 400,
 		}, {
-			"Customer not found", &FakeStore{RemoveCustomerFn: func(ctx context.Context, id int) error {
-				return sql.ErrNoRows
-			}}, "2", 404,
-		}, {
-			"DB Error", &FakeStore{RemoveCustomerFn: func(ctx context.Context, id int) error {
-				return errors.New("Internal server error")
+			"Service error", &FakeCustomerRemover{DeactivateCustomerFn: func(ctx context.Context, cid int) error {
+				return errors.New("transaction failed")
 			}}, "1", 500,
 		},
 	}
@@ -287,13 +291,12 @@ func TestRemoveCustomer(t *testing.T) {
 			req := httptest.NewRequest("PATCH", "/customers/{id}", nil)
 
 			req.SetPathValue("id", e.pathValue)
-			handler := RemoveCustomerHandler(e.store)
+			handler := RemoveCustomerHandler(e.service)
 			handler(w, req)
 
 			if w.Code != e.want {
 				t.Errorf("Got %d want %d", w.Code, e.want)
 			}
-
 		})
 	}
 }
