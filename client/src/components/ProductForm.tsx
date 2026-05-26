@@ -7,7 +7,7 @@ import { toast } from "sonner"
 
 function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
   const [formData, setFormData] = useState<Products>(
-    product ?? { ID: 0, SKU: "", Name: "", Price: 0, Quantity: 0, Category: "", CategoryID: 0 }
+    product ? { ...product, Price: product.Price / 100 } : { ID: 0, SKU: "", Name: "", Price: 0, Quantity: 0, Category: "", CategoryID: 0 }
   )
 
   const handleSubmit = async () => {
@@ -21,7 +21,7 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
         body: JSON.stringify({
           name: formData.Name,
           sku: formData.SKU,
-          price: formData.Price,
+          price: (formData.Price) * 100,
           quantity: formData.Quantity,
           category_id: formData.CategoryID,
         }),
@@ -30,6 +30,8 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
         const message = await res.text()
         throw new Error(message)
       }
+      const message = isEditing ? "Product updated" : "Product created"
+      toast.success(message)
       onSuccess()
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
@@ -52,13 +54,13 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
       </div>
       <div>
         <label>Price</label>
-        <Input type="number" value={formData.Price} onChange={e => {
+        <Input type="number" step="0.01" value={formData.Price === 0 ? "" : formData.Price} onChange={e => {
           setFormData({ ...formData, Price: Number(e.target.value) })
         }} />
       </div>
       <div>
         <label>Quantity</label>
-        <Input type="number" value={formData.Quantity} onChange={e => {
+        <Input type="number" value={formData.Quantity === 0 ? "" : formData.Quantity} onChange={e => {
           setFormData({ ...formData, Quantity: Number(e.target.value) })
         }} />
       </div>

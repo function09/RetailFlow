@@ -35,6 +35,7 @@ export default function Products() {
       }
 
       setRefresh(r => r + 1)
+      toast.success("Product removed")
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
     }
@@ -227,6 +228,8 @@ export default function Products() {
           <ProductForm product={selectedProduct} categories={categories} onSuccess={() => {
             setSelectedProduct(null)
             setRefresh(r => r + 1)
+            const message = selectedProduct?.ID === 0 ? "Product created" : "Product updated"
+            toast.success(message)
           }} />
         </SheetContent>
       </Sheet>

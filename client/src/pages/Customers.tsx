@@ -81,6 +81,7 @@ export default function Customers() {
       }
 
       setRefresh(r => r + 1)
+      toast.success("Customer profile successfully disabled")
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
     }
@@ -192,6 +193,8 @@ export default function Customers() {
           <CustomerForm customer={selectedCustomer} onSuccess={() => {
             setSelectedCustomer(null)
             setRefresh(r => r + 1)
+            const message = selectedCustomer?.ID === 0 ? "Customer created" : "Customer updated"
+            toast.success(message)
           }} />
         </SheetContent>
       </Sheet>
