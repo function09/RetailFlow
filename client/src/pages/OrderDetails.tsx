@@ -1,10 +1,11 @@
 import { getOrderDetails, updateOrderStatus } from "@/api/orders";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -17,12 +18,15 @@ export default function OrderDetails() {
   const { data: orderDetails, isLoading, isError } = useQuery({ queryKey: ["orderDetails", orderID], queryFn: () => getOrderDetails(orderID!), enabled: !!orderID })
 
   const mutation = useMutation({
-    mutationFn: (newStatus: string) => updateOrderStatus(Number(orderID), newStatus), onSuccess: () => {
+    mutationFn: (newStatus: string) => updateOrderStatus(Number(orderID), newStatus),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orderDetails", orderID] })
       toast.success("Order status updated")
     },
     onError: (error) => toast.error(error.message)
   })
+
+  const total = orderDetails?.OrderItems.reduce((sum, item) => sum + item.Price * item.Quantity, 0) ?? 0
 
   return (
     <div className="space-y-6">
@@ -43,22 +47,33 @@ export default function OrderDetails() {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card>
-              <CardHeader>
-                <CardTitle>Order Info</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Order Info</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Customer</p>
-                  <p>{orderDetails?.Order.FirstName} {orderDetails?.Order.LastName}</p>
+              <CardContent className="space-y-4 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Customer</span>
+                  <span className="font-medium">{orderDetails?.Order.FirstName} {orderDetails?.Order.LastName}</span>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Status</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Fulfillment</span>
+                  <span className="capitalize font-medium">{orderDetails?.Order.Fulfillment}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Created</span>
+                  <span className="font-medium">{orderDetails && new Date(orderDetails.Order.CreatedAt).toLocaleDateString()}</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Status</span>
+                    <StatusBadge status={orderDetails?.Order.Status ?? ""} />
+                  </div>
                   <Select
                     value={orderDetails?.Order.Status}
                     onValueChange={(val) => mutation.mutate(val)}
                     disabled={mutation.isPending}
                   >
-                    <SelectTrigger className="w-40">
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -71,25 +86,23 @@ export default function OrderDetails() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Fulfillment</p>
-                  <p className="capitalize">{orderDetails?.Order.Fulfillment}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Created</p>
-                  <p>{orderDetails && new Date(orderDetails.Order.CreatedAt).toLocaleDateString()}</p>
-                </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Shipping Address</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Shipping Address</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-1">
-                <p>{orderDetails?.Order.StreetLine1}</p>
-                {orderDetails?.Order.StreetLine2 && <p>{orderDetails.Order.StreetLine2}</p>}
-                <p>{orderDetails?.Order.City}, {orderDetails?.Order.State} {orderDetails?.Order.ZipCode}</p>
+              <CardContent className="text-sm space-y-1">
+                {orderDetails?.Order.StreetLine1 ? (
+                  <>
+                    <p>{orderDetails.Order.StreetLine1}</p>
+                    {orderDetails.Order.StreetLine2 && <p>{orderDetails.Order.StreetLine2}</p>}
+                    <p>{orderDetails.Order.City}, {orderDetails.Order.State} {orderDetails.Order.ZipCode}</p>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">No address on file.</p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -124,6 +137,14 @@ export default function OrderDetails() {
                     ))
                   )}
                 </TableBody>
+                {(orderDetails?.OrderItems.length ?? 0) > 0 && (
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-right font-medium">Total</TableCell>
+                      <TableCell className="font-semibold">${(total / 100).toFixed(2)}</TableCell>
+                    </TableRow>
+                  </TableFooter>
+                )}
               </Table>
             </div>
           </div>
