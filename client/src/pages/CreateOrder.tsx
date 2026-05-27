@@ -17,15 +17,14 @@ import { toast } from "sonner"
 export default function CreateOrder() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [fulfillment, setFulFillment] = useState<string>("")
   const [items, setItems] = useState<{ product: Products, quantity: number }[]>([])
   const [selectedProductID, setSelectedProductID] = useState<string>("")
-  const [selectedQuantity, setSelectedQuantity] = useState<number>(1)
+  const [selectedQuantity, setSelectedQuantity] = useState<number>(0)
 
-  const { data: customerData, isLoading: customerIsLoading } = useQuery({ queryKey: ["customers"], queryFn: getCustomers })
-  const { data: itemData, isLoading: itemIsLoading } = useQuery({ queryKey: ["products"], queryFn: getProducts })
+  const { data: customerData, isLoading: customerIsLoading } = useQuery({ queryKey: ["customers"], queryFn: () => getCustomers() })
+  const { data: itemData, isLoading: itemIsLoading } = useQuery({ queryKey: ["products"], queryFn: () => getProducts() })
 
   const mutation = useMutation({
     mutationFn: createOrder,
@@ -66,9 +65,9 @@ export default function CreateOrder() {
     setItems(items.filter(i => i.product.ID !== productID))
   }
 
-  return (
-    <div className="space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-semibold">Create Order</h1>
+  return (<>
+    <h1 className="text-2xl font-semibold">Create Order</h1>
+    <div className="space-y-6 max-w-2xl mx-auto">
 
       <Card>
         <CardHeader><CardTitle>Customer</CardTitle></CardHeader>
@@ -132,7 +131,7 @@ export default function CreateOrder() {
               <Input
                 type="number"
                 min={1}
-                value={selectedQuantity}
+                value={selectedQuantity === 0 ? "" : selectedQuantity}
                 onChange={e => setSelectedQuantity(Number(e.target.value))}
               />
             </div>
@@ -153,7 +152,7 @@ export default function CreateOrder() {
                 {items.map(i => (
                   <TableRow key={i.product.ID}>
                     <TableCell>{i.product.Name}</TableCell>
-                    <TableCell>${i.product.Price.toFixed(2)}</TableCell>
+                    <TableCell>${(i.product.Price / 100).toFixed(2)}</TableCell>
                     <TableCell>{i.quantity}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="icon" onClick={() => handleRemoveItem(i.product.ID)}>
@@ -178,5 +177,6 @@ export default function CreateOrder() {
         </Button>
       </div>
     </div>
+  </>
   )
 }

@@ -6,6 +6,7 @@ import { AuthProvider } from './context/AuthContext'
 import { DashBoard } from './pages/Dashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { SidebarProvider } from './components/ui/sidebar'
+import { TooltipProvider } from './components/ui/tooltip'
 import Layout from './components/Layout'
 import Products from './pages/Products'
 import Customers from './pages/Customers'
@@ -22,12 +23,12 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <Toaster position='bottom-center' />
         <AuthProvider>
-          <SidebarProvider>
+          <TooltipProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
 
               <Route element={<ProtectedRoute />}>
-                <Route element={<Layout />}>
+                <Route element={<SidebarProvider><Layout /></SidebarProvider>}>
                   <Route path='/dashboard' element={<DashBoard />} />
                   <Route path='/orders' element={<Orders />} />
                   <Route path='/customers' element={<Customers />} />
@@ -39,7 +40,7 @@ function App() {
               </Route>
 
             </Routes>
-          </SidebarProvider>
+          </TooltipProvider>
         </AuthProvider >
       </QueryClientProvider>
     </>

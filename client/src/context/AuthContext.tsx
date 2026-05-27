@@ -1,17 +1,25 @@
 import { createContext, useEffect, useState, type ReactNode } from "react"
+import { logout as logoutAPI } from "../api/auth"
 import type { User } from "../types/types"
 
 interface AuthContext {
   user: User | null
   loading: boolean
   checkAuth: () => Promise<void>
+  logout: () => Promise<void>
 }
 
-export const AuthContext = createContext<AuthContext>({ user: null, loading: true, checkAuth: async () => { } })
+export const AuthContext = createContext<AuthContext>({ user: null, loading: true, checkAuth: async () => { }, logout: async () => { } })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const logout = async () => {
+    await logoutAPI()
+    setUser(null)
+  }
+
   const checkAuth = async () => {
     try {
 
@@ -41,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, loading, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, checkAuth, logout }}>
       {children}
     </AuthContext.Provider >
   )

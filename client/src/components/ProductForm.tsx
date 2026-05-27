@@ -1,6 +1,7 @@
 import { createProduct, updateProduct } from "@/api/products"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ProductFormProps, Products } from "@/types/types"
 import { useMutation } from "@tanstack/react-query"
@@ -32,35 +33,29 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
   })
 
   return (
-    <div className="flex flex-col gap-4 mt-4">
-      <div>
-        <label>SKU</label>
-        <Input value={formData.SKU} onChange={e => {
-          setFormData({ ...formData, SKU: e.target.value })
-        }} />
+    <div className="flex flex-col gap-5 mt-4 px-1">
+      <div className="space-y-1.5">
+        <Label htmlFor="sku">SKU</Label>
+        <Input id="sku" className="max-w-xs" value={formData.SKU} onChange={e => setFormData({ ...formData, SKU: e.target.value })} />
       </div>
-      <div>
-        <label>Name</label>
-        <Input value={formData.Name} onChange={e => {
-          setFormData({ ...formData, Name: e.target.value })
-        }} />
+      <div className="space-y-1.5">
+        <Label htmlFor="name">Name</Label>
+        <Input id="name" className="max-w-xs" value={formData.Name} onChange={e => setFormData({ ...formData, Name: e.target.value })} />
       </div>
-      <div>
-        <label>Price</label>
-        <Input type="number" step="0.01" value={formData.Price === 0 ? "" : formData.Price} onChange={e => {
-          setFormData({ ...formData, Price: Number(e.target.value) })
-        }} />
+      <div className="flex gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="price">Price ($)</Label>
+          <Input id="price" type="number" step="0.01" className="w-28" value={formData.Price === 0 ? "" : formData.Price} onChange={e => setFormData({ ...formData, Price: Number(e.target.value) })} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="quantity">Quantity</Label>
+          <Input id="quantity" type="number" className="w-24" value={formData.Quantity === 0 ? "" : formData.Quantity} onChange={e => setFormData({ ...formData, Quantity: Number(e.target.value) })} />
+        </div>
       </div>
-      <div>
-        <label>Quantity</label>
-        <Input type="number" value={formData.Quantity === 0 ? "" : formData.Quantity} onChange={e => {
-          setFormData({ ...formData, Quantity: Number(e.target.value) })
-        }} />
-      </div>
-      <div>
-        <label>Category</label>
+      <div className="space-y-1.5">
+        <Label>Category</Label>
         <Select value={formData.CategoryID === 0 ? "" : String(formData.CategoryID)} onValueChange={value => setFormData({ ...formData, CategoryID: Number(value) })}>
-          <SelectTrigger>
+          <SelectTrigger className="max-w-xs">
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
           <SelectContent>
@@ -72,7 +67,11 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
           </SelectContent>
         </Select>
       </div>
-      <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>Save</Button>
+      <div className="pt-2">
+        <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+          {mutation.isPending ? "Saving..." : "Save"}
+        </Button>
+      </div>
     </div>
   )
 }
