@@ -24,7 +24,7 @@ export default function Customers() {
   const [order, setOrder] = useState<"asc" | "desc">("asc")
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
 
-  const { data, isLoading, isPlaceholderData } = useQuery({ queryKey: ["customers", debouncedSearch, page, sort, order], queryFn: () => getCustomers(20, (page - 1) * 20, debouncedSearch, sort, order), placeholderData: keepPreviousData })
+  const { data, isLoading, isError, isPlaceholderData } = useQuery({ queryKey: ["customers", debouncedSearch, page, sort, order], queryFn: () => getCustomers(20, (page - 1) * 20, debouncedSearch, sort, order), placeholderData: keepPreviousData })
 
   const mutation = useMutation({
     mutationFn: deactivateCustomer, onSuccess: () => {
@@ -111,8 +111,13 @@ export default function Customers() {
                   <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                 </TableRow>
               ))
-            ) :
-              data?.length === 0 ? (
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
+                  Failed to load customers.
+                </TableCell>
+              </TableRow>
+            ) : data?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
                     No customers found.
@@ -135,7 +140,7 @@ export default function Customers() {
                           <DropdownMenuItem onSelect={() => setSelectedCustomer(customer)}>
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => mutation.mutate(customer.ID)}> Deactivate </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => mutation.mutate(customer.ID)}>Deactivate</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
