@@ -21,7 +21,7 @@ export default function Products() {
   const [order, setOrder] = useState<"asc" | "desc">("asc")
   const [selectedProduct, setSelectedProduct] = useState<Products | null>(null)
 
-  const { data: ProductsData, isLoading: productsIsLoading, isPlaceholderData: productsIsPlaceholderData } = useQuery({ queryKey: ["products", page, debouncedSearch, sort, order], queryFn: () => getProducts(20, (page - 1) * 20, debouncedSearch, sort, order), placeholderData: keepPreviousData })
+  const { data: ProductsData, isLoading: productsIsLoading, isError: productsIsError, isPlaceholderData: productsIsPlaceholderData } = useQuery({ queryKey: ["products", page, debouncedSearch, sort, order], queryFn: () => getProducts(20, (page - 1) * 20, debouncedSearch, sort, order), placeholderData: keepPreviousData })
   const { data: CategoriesData } = useQuery({ queryKey: ["categories"], queryFn: () => getCategories() })
 
   const mutation = useMutation({
@@ -124,11 +124,18 @@ export default function Products() {
                   <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-12" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-8" /></TableCell>
                 </TableRow>
               ))
+            ) : productsIsError ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  Failed to load products.
+                </TableCell>
+              </TableRow>
             ) : ProductsData?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                   No products found.
                 </TableCell>
               </TableRow>
@@ -151,7 +158,7 @@ export default function Products() {
                         <DropdownMenuItem onSelect={() => setSelectedProduct(product)}>
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => mutation.mutate(product.ID)}>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onSelect={() => mutation.mutate(product.ID)}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
