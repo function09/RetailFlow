@@ -1,3 +1,4 @@
+import { StatusBadge } from "@/components/StatusBadge"
 import { getOrders } from "@/api/orders"
 import { useQuery } from "@tanstack/react-query"
 import {
@@ -83,10 +84,10 @@ export default function Orders() {
             ) : (
               orders?.map((order) => (
                 <TableRow key={order.ID} onClick={() => navigate('/orders/' + order.ID)} className="cursor-pointer">
-                  <TableCell className="font-medium">{order.ID}</TableCell>
+                  <TableCell className="font-medium">#{order.ID}</TableCell>
                   <TableCell>{order.FirstName} {order.LastName}</TableCell>
-                  <TableCell>{order.Status}</TableCell>
-                  <TableCell>{order.Fulfillment}</TableCell>
+                  <TableCell><StatusBadge status={order.Status} /></TableCell>
+                  <TableCell className="capitalize">{order.Fulfillment}</TableCell>
                   <TableCell>{new Date(order.CreatedAt).toLocaleDateString()}</TableCell>
                 </TableRow>
               ))
