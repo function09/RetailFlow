@@ -1,3 +1,4 @@
+import { deactivateCustomer, getCustomers } from "@/api/customers";
 import CustomerForm from "@/components/CustomerForm";
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -6,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Customer } from "@/types/types";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
@@ -13,42 +15,24 @@ import { toast } from "sonner";
 
 export default function Customers() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
   const [page, setPage] = useState<number>(1)
   const [search, setSearch] = useState<string>("")
   const [debouncedSearch, setDebouncedSearch] = useState<string>("")
   const [sort, setSort] = useState<string>("")
   const [order, setOrder] = useState<"asc" | "desc">("asc")
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [refresh, setRefresh] = useState<number>(0)
 
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoading(true)
-      try {
+  const { data, isLoading, isPlaceholderData } = useQuery({ queryKey: ["customers", debouncedSearch, page, sort, order], queryFn: () => getCustomers(20, (page - 1) * 20, debouncedSearch, sort, order), placeholderData: keepPreviousData })
 
-        const options = { credentials: "include" as const, headers: { "Content-Type": "application/json" } }
-        const url = "http://localhost:8080"
-
-        const res = await fetch(url + `/customers?limit=20&offset=${(page - 1) * 20}&search=${debouncedSearch}&sort=${sort}&order=${order}`, options)
-
-        if (!res.ok) {
-          const message = await res.text()
-          throw new Error(message)
-        }
-
-        const customersJSON = await res.json()
-        setCustomers(customersJSON)
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchCustomers()
-  }, [debouncedSearch, page, sort, order, refresh])
+  const mutation = useMutation({
+    mutationFn: deactivateCustomer, onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customers"] })
+      toast.success("Customer profile successfully disabled")
+    },
+    onError: (e) => { toast.error(e instanceof Error ? e.message : "An unexpected error occured") }
+  })
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -67,26 +51,6 @@ export default function Customers() {
     }
     setPage(1)
   }
-
-  const handleDelete = async (id: number) => {
-    try {
-      const res = await fetch(`http://localhost:8080/customers/${id}`, {
-        method: "PATCH",
-        credentials: "include" as const,
-      })
-
-      if (!res.ok) {
-        const message = await res.text()
-        throw new Error(message)
-      }
-
-      setRefresh(r => r + 1)
-      toast.success("Customer profile successfully disabled")
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
-    }
-  }
-
 
   return (
     <div className="space-y-6">
@@ -138,7 +102,7 @@ export default function Customers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
@@ -148,14 +112,14 @@ export default function Customers() {
                 </TableRow>
               ))
             ) :
-              customers.length === 0 ? (
+              data?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">
                     No customers found.
                   </TableCell>
                 </TableRow>
               ) :
-                customers.map((customer) =>
+                (data ?? []).map((customer) =>
                   <TableRow className="cursor-pointer" key={customer.ID} onClick={() => navigate(`/customers/${customer.ID}`)}>
                     <TableCell className="font-medium">{customer.FirstName}</TableCell>
                     <TableCell className="font-medium">{customer.LastName}</TableCell>
@@ -171,9 +135,7 @@ export default function Customers() {
                           <DropdownMenuItem onSelect={() => setSelectedCustomer(customer)}>
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => handleDelete(customer.ID)}>
-                            Delete
-                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => mutation.mutate(customer.ID)}> Deactivate </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -192,9 +154,7 @@ export default function Customers() {
           </SheetHeader>
           <CustomerForm customer={selectedCustomer} onSuccess={() => {
             setSelectedCustomer(null)
-            setRefresh(r => r + 1)
-            const message = selectedCustomer?.ID === 0 ? "Customer created" : "Customer updated"
-            toast.success(message)
+            queryClient.invalidateQueries({ queryKey: ["customers"] })
           }} />
         </SheetContent>
       </Sheet>
@@ -204,7 +164,7 @@ export default function Customers() {
           variant="outline"
           size="sm"
           onClick={() => setPage(p => Math.max(1, p - 1))}
-          disabled={page === 1 || loading}
+          disabled={page === 1 || isLoading}
         >
           Previous
         </Button>
@@ -212,8 +172,12 @@ export default function Customers() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setPage(p => p + 1)}
-          disabled={customers.length < 20 || loading}
+          onClick={() => {
+            if (!isPlaceholderData) {
+              setPage(p => p + 1)
+            }
+          }}
+          disabled={(data?.length ?? 0) < 20 || isLoading}
         >
           Next
         </Button>

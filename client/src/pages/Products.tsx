@@ -4,42 +4,33 @@ import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import type { Products, Categories } from "@/types/types"
+import type { Products } from "@/types/types"
 import { useEffect, useState } from "react"
 import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from "lucide-react"
 import ProductForm from "@/components/ProductForm"
 import { toast } from "sonner"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { deleteProduct, getCategories, getProducts } from "@/api/products"
 
 export default function Products() {
-  const [products, setProducts] = useState<Products[]>([])
-  const [categories, setCategories] = useState<Categories[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
+  const queryClient = useQueryClient()
   const [page, setPage] = useState<number>(1)
   const [search, setSearch] = useState<string>("")
   const [debouncedSearch, setDebouncedSearch] = useState<string>("")
   const [sort, setSort] = useState<string>("")
   const [order, setOrder] = useState<"asc" | "desc">("asc")
   const [selectedProduct, setSelectedProduct] = useState<Products | null>(null)
-  const [refresh, setRefresh] = useState<number>(0)
 
-  const handleDelete = async (id: number) => {
-    try {
-      const res = await fetch(`http://localhost:8080/products/${id}`, {
-        method: "DELETE",
-        credentials: "include" as const,
-      })
+  const { data: ProductsData, isLoading: productsIsLoading, isPlaceholderData: productsIsPlaceholderData } = useQuery({ queryKey: ["products", page, debouncedSearch, sort, order], queryFn: () => getProducts(20, (page - 1) * 20, debouncedSearch, sort, order), placeholderData: keepPreviousData })
+  const { data: CategoriesData } = useQuery({ queryKey: ["categories"], queryFn: () => getCategories() })
 
-      if (!res.ok) {
-        const message = await res.text()
-        throw new Error(message)
-      }
-
-      setRefresh(r => r + 1)
-      toast.success("Product removed")
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
-    }
-  }
+  const mutation = useMutation({
+    mutationFn: deleteProduct, onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+      toast.success("Product successfully removed")
+    },
+    onError: (error) => toast.error(error.message)
+  })
 
   const handleSort = (column: string) => {
     if (sort === column) {
@@ -52,31 +43,6 @@ export default function Products() {
   }
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true)
-      try {
-        const options = { credentials: "include" as const, headers: { "Content-Type": "application/json" } }
-        const url = "http://localhost:8080"
-
-        const res = await fetch(url + `/products?limit=20&offset=${(page - 1) * 20}&search=${debouncedSearch}&sort=${sort}&order=${order}`, options)
-
-        if (!res.ok) {
-          const message = await res.text()
-          throw new Error(message)
-        }
-
-        const resJSON = await res.json()
-        setProducts(resJSON)
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchProducts()
-  }, [page, debouncedSearch, sort, order, refresh])
-
-  useEffect(() => {
     const timer = setTimeout(() => {
       setPage(1)
       setDebouncedSearch(search)
@@ -84,28 +50,6 @@ export default function Products() {
 
     return () => clearTimeout(timer)
   }, [search])
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const options = { credentials: "include" as const, headers: { "Content-Type": "application/json" } }
-        const url = "http://localhost:8080"
-
-        const res = await fetch(url + "/categories", options)
-
-        if (!res.ok) {
-          const message = await res.text()
-          throw new Error(message)
-        }
-
-        const resJSON = await res.json()
-        setCategories(resJSON)
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
-      }
-    }
-    fetchCategories()
-  }, [])
 
   return (
     <div className="space-y-6">
@@ -172,7 +116,7 @@ export default function Products() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {productsIsLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
@@ -182,14 +126,14 @@ export default function Products() {
                   <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                 </TableRow>
               ))
-            ) : products.length === 0 ? (
+            ) : ProductsData?.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                   No products found.
                 </TableCell>
               </TableRow>
             ) : (
-              products.map((product) => (
+              (ProductsData ?? []).map((product) => (
                 <TableRow key={product.ID}>
                   <TableCell className="font-mono text-xs">{product.SKU}</TableCell>
                   <TableCell className="font-medium">{product.Name}</TableCell>
@@ -207,7 +151,7 @@ export default function Products() {
                         <DropdownMenuItem onSelect={() => setSelectedProduct(product)}>
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => handleDelete(product.ID)}>
+                        <DropdownMenuItem onSelect={() => mutation.mutate(product.ID)}>
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -225,11 +169,9 @@ export default function Products() {
           <SheetHeader>
             <SheetTitle>{selectedProduct?.ID === 0 ? "Add Product" : "Edit Product"}</SheetTitle>
           </SheetHeader>
-          <ProductForm product={selectedProduct} categories={categories} onSuccess={() => {
+          <ProductForm product={selectedProduct} categories={CategoriesData ?? []} onSuccess={() => {
             setSelectedProduct(null)
-            setRefresh(r => r + 1)
-            const message = selectedProduct?.ID === 0 ? "Product created" : "Product updated"
-            toast.success(message)
+            queryClient.invalidateQueries({ queryKey: ["products"] })
           }} />
         </SheetContent>
       </Sheet>
@@ -239,7 +181,7 @@ export default function Products() {
           variant="outline"
           size="sm"
           onClick={() => setPage(p => Math.max(1, p - 1))}
-          disabled={page === 1 || loading}
+          disabled={page === 1 || productsIsLoading}
         >
           Previous
         </Button>
@@ -247,8 +189,13 @@ export default function Products() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setPage(p => p + 1)}
-          disabled={products.length < 20 || loading}
+          onClick={() => {
+            if (!productsIsPlaceholderData) {
+              setPage(p => p + 1)
+            }
+          }
+          }
+          disabled={(ProductsData ?? []).length < 20 || productsIsLoading}
         >
           Next
         </Button>

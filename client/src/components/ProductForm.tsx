@@ -1,7 +1,9 @@
+import { createProduct, updateProduct } from "@/api/products"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { ProductFormProps, Products, } from "@/types/types"
+import type { ProductFormProps, Products } from "@/types/types"
+import { useMutation } from "@tanstack/react-query"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -10,33 +12,24 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
     product ? { ...product, Price: product.Price / 100 } : { ID: 0, SKU: "", Name: "", Price: 0, Quantity: 0, Category: "", CategoryID: 0 }
   )
 
-  const handleSubmit = async () => {
-    try {
-      const isEditing = product?.ID !== 0
-      const url = isEditing ? `http://localhost:8080/products/${formData.ID}` : "http://localhost:8080/products"
-      const res = await fetch(url, {
-        method: isEditing ? "PUT" : "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.Name,
-          sku: formData.SKU,
-          price: (formData.Price) * 100,
-          quantity: formData.Quantity,
-          category_id: formData.CategoryID,
-        }),
-      })
-      if (!res.ok) {
-        const message = await res.text()
-        throw new Error(message)
-      }
-      const message = isEditing ? "Product updated" : "Product created"
-      toast.success(message)
-      onSuccess()
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
-    }
+  const isEditing = product?.ID !== 0
+
+  const payload = {
+    name: formData.Name,
+    sku: formData.SKU,
+    price: formData.Price * 100,
+    quantity: formData.Quantity,
+    category_id: formData.CategoryID,
   }
+
+  const mutation = useMutation({
+    mutationFn: () => isEditing ? updateProduct(formData.ID, payload) : createProduct(payload),
+    onSuccess: () => {
+      toast.success(isEditing ? "Product updated" : "Product created")
+      onSuccess()
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "An unexpected error occurred"),
+  })
 
   return (
     <div className="flex flex-col gap-4 mt-4">
@@ -79,7 +72,7 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
           </SelectContent>
         </Select>
       </div>
-      <Button onClick={handleSubmit}>Save</Button>
+      <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>Save</Button>
     </div>
   )
 }

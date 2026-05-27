@@ -2,8 +2,8 @@ import type { Customer, Order } from "@/types/types"
 
 const BASE_URL = import.meta.env.VITE_API_URL
 
-export async function getCustomers(): Promise<Customer[]> {
-  const res = await fetch(`${BASE_URL}/customers?limit=500&offset=0`, { credentials: "include" })
+export async function getCustomers(limit = 500, offset = 0, search = "", sort = "", order = "asc"): Promise<Customer[]> {
+  const res = await fetch(`${BASE_URL}/customers?limit=${limit}&offset=${offset}&search=${search}&sort=${sort}&order=${order}`, { credentials: "include" })
 
   if (!res.ok) {
     const message = await res.text()
@@ -22,6 +22,43 @@ export async function getCustomer(customerID: string): Promise<Customer> {
   }
 
   return res.json()
+}
+
+export async function createCustomer(data: { firstName: string, lastName: string, email: string }): Promise<void> {
+  const res = await fetch(`${BASE_URL}/customers`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const message = await res.text()
+    throw new Error(message)
+  }
+}
+
+export async function updateCustomer(id: number, data: { firstName: string, lastName: string, email: string }): Promise<void> {
+  const res = await fetch(`${BASE_URL}/customers/${id}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const message = await res.text()
+    throw new Error(message)
+  }
+}
+
+export async function deactivateCustomer(id: number): Promise<void> {
+  const res = await fetch(`${BASE_URL}/customers/${id}`, {
+    method: "PATCH",
+    credentials: "include",
+  })
+  if (!res.ok) {
+    const message = await res.text()
+    throw new Error(message)
+  }
 }
 
 export async function getCustomerOrders(customerID: string): Promise<Order[]> {

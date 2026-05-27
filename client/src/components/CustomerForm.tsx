@@ -1,6 +1,8 @@
+import { createCustomer, updateCustomer } from "@/api/customers"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { Customer, CustomersFormProps } from "@/types/types"
+import { useMutation } from "@tanstack/react-query"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -9,29 +11,18 @@ export default function CustomerForm({ customer, onSuccess }: CustomersFormProps
     customer ?? { ID: 0, FirstName: "", LastName: "", Email: "", IsActive: true }
   )
 
-  const handleSubmit = async () => {
-    try {
-      const isEditing = customer?.ID !== 0
-      const url = isEditing ? `http://localhost:8080/customers/${formData.ID}` : "http://localhost:8080/customers"
-      const res = await fetch(url, {
-        method: isEditing ? "PUT" : "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: formData.FirstName,
-          lastName: formData.LastName,
-          email: formData.Email
-        }),
-      })
-      if (!res.ok) {
-        const message = await res.text()
-        throw new Error(message)
-      }
+  const isEditing = customer?.ID !== 0
+
+  const mutation = useMutation({
+    mutationFn: () => isEditing
+      ? updateCustomer(formData.ID, { firstName: formData.FirstName, lastName: formData.LastName, email: formData.Email })
+      : createCustomer({ firstName: formData.FirstName, lastName: formData.LastName, email: formData.Email }),
+    onSuccess: () => {
+      toast.success(isEditing ? "Customer updated" : "Customer created")
       onSuccess()
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "An unexpected error occurred")
-    }
-  }
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "An unexpected error occurred"),
+  })
 
   return (
     <div className="flex flex-col gap-4 mt-4">
@@ -53,8 +44,7 @@ export default function CustomerForm({ customer, onSuccess }: CustomersFormProps
           setFormData({ ...formData, Email: e.target.value })
         }} />
       </div>
-      <Button onClick={handleSubmit}>Save</Button>
+      <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>Save</Button>
     </div>
   )
 }
-
