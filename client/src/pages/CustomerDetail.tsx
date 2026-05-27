@@ -1,4 +1,5 @@
 import { getCustomer, getCustomerOrders } from "@/api/customers"
+import { StatusBadge } from "@/components/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,7 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useParams } from "react-router"
-
 
 export default function CustomerDetail() {
   const navigate = useNavigate()
@@ -18,28 +18,30 @@ export default function CustomerDetail() {
     <div className="space-y-6">
       <Button variant="outline" size="sm" onClick={() => navigate("/customers")}><ChevronLeft className="h-4 w-4" />Back</Button>
 
-      {
-        customerLoading ? (
-          <h1>Loading...</h1>
-        ) : customerError ? (
-          <h1>Failed to load customers</h1>
-        ) : (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-semibold">{customer?.FirstName} {customer?.LastName}</h1>
-            <Card>
-              <CardHeader>
-                <CardTitle>Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p>{customer?.Email}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )
-      }
+      {customerLoading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      ) : customerError ? (
+        <p className="text-muted-foreground">Failed to load customer.</p>
+      ) : (
+        <div className="space-y-6">
+          <h1 className="text-2xl font-semibold">{customer?.FirstName} {customer?.LastName}</h1>
+          <Card className="max-w-md">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Email</span>
+                <span className="font-medium">{customer?.Email}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       <div className="space-y-2">
         <h2 className="text-lg font-semibold">Orders</h2>
         <div className="rounded-md border">
@@ -77,9 +79,9 @@ export default function CustomerDetail() {
               ) : (
                 orders?.map((order) => (
                   <TableRow key={order.ID} onClick={() => navigate('/orders/' + order.ID)} className="cursor-pointer">
-                    <TableCell className="font-medium">{order.ID}</TableCell>
-                    <TableCell>{order.Status}</TableCell>
-                    <TableCell>{order.Fulfillment}</TableCell>
+                    <TableCell className="font-medium">#{order.ID}</TableCell>
+                    <TableCell><StatusBadge status={order.Status} /></TableCell>
+                    <TableCell className="capitalize">{order.Fulfillment}</TableCell>
                     <TableCell>{new Date(order.CreatedAt).toLocaleDateString()}</TableCell>
                   </TableRow>
                 ))
