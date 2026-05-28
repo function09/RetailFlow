@@ -88,23 +88,25 @@ export default function OrderDetails() {
                 </div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Shipping Address</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm space-y-1">
-                {orderDetails?.Order.StreetLine1 ? (
-                  <>
-                    <p>{orderDetails.Order.StreetLine1}</p>
-                    {orderDetails.Order.StreetLine2 && <p>{orderDetails.Order.StreetLine2}</p>}
-                    <p>{orderDetails.Order.City}, {orderDetails.Order.State} {orderDetails.Order.ZipCode}</p>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground">No address on file.</p>
-                )}
-              </CardContent>
-            </Card>
+            {
+              orderDetails?.Order.Fulfillment !== "pickup" &&
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Shipping Address</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm space-y-1">
+                  {orderDetails?.Order.StreetLine1 ? (
+                    <>
+                      <p>{orderDetails.Order.StreetLine1}</p>
+                      {orderDetails.Order.StreetLine2 && <p>{orderDetails.Order.StreetLine2}</p>}
+                      <p>{orderDetails.Order.City}, {orderDetails.Order.State} {orderDetails.Order.ZipCode}</p>
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground">No address on file.</p>
+                  )}
+                </CardContent>
+              </Card>
+            }
           </div>
 
           <div className="space-y-2">
