@@ -48,7 +48,7 @@ func main() {
 	categoriesStore := categories.NewStore(dbGetter)
 	orderStore := orders.NewStore(dbGetter)
 
-	ordersService := orders.NewService(orderStore, productsStore, addressesStore, transactor)
+	ordersService := orders.NewService(orderStore, productsStore, transactor)
 	customerService := customers.NewService(customerStore, orderStore, transactor)
 
 	// Auth
@@ -80,6 +80,7 @@ func main() {
 	// Addresses
 	mux.HandleFunc("GET /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.GetCustomerAddressHandler(addressesStore)))
 	mux.HandleFunc("DELETE /addresses/{id}", middleware.AuthMiddleware(cfg.JWTSecret, addresses.RemoveCustomerAddressHandler(addressesStore)))
+	mux.HandleFunc("PATCH /customers/{customerID}/addresses/{addressID}/default", middleware.AuthMiddleware(cfg.JWTSecret, addresses.SetDefaultAddressHandler(addressesStore)))
 
 	// Orders
 	mux.HandleFunc("GET /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrdersHandler(orderStore)))
