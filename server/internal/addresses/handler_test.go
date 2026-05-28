@@ -14,6 +14,7 @@ type FakeStore struct {
 	GetCustomerAddressFn    func(ctx context.Context, aid int) (*Address, error)
 	AddCustomerAddressFn    func(ctx context.Context, address *Address) (int, error)
 	RemoveCustomerAddressFn func(ctx context.Context, aid int) error
+	SetDefaultAddressFn     func(ctx context.Context, customerID, addressID int) error
 }
 
 func (s *FakeStore) GetCustomerAddresses(ctx context.Context, cid int) ([]*Address, error) {
@@ -30,6 +31,10 @@ func (s *FakeStore) AddCustomerAddress(ctx context.Context, address *Address) (i
 
 func (s *FakeStore) RemoveCustomerAddress(ctx context.Context, aid int) error {
 	return s.RemoveCustomerAddressFn(ctx, aid)
+}
+
+func (s *FakeStore) SetDefaultAddress(ctx context.Context, customerID, addressID int) error {
+	return s.SetDefaultAddressFn(ctx, customerID, addressID)
 }
 
 func TestGetCustomerAddresses(t *testing.T) {
@@ -145,6 +150,49 @@ func TestAddCustomerAddress(t *testing.T) {
 			req.SetPathValue("id", e.pathValue)
 
 			handler := AddCustomerAddressHandler(e.store)
+			handler(w, req)
+
+			if w.Code != e.want {
+				t.Errorf("Got %d want %d", w.Code, e.want)
+			}
+		})
+	}
+}
+
+func TestSetDefaultAddress(t *testing.T) {
+	var tests = []struct {
+		name      string
+		store     AddressStore
+		customerID string
+		addressID  string
+		want      int
+	}{
+		{"Successfully sets default address", &FakeStore{SetDefaultAddressFn: func(ctx context.Context, customerID, addressID int) error {
+			return nil
+		}}, "1", "2", 200},
+		{"Invalid customer ID", &FakeStore{SetDefaultAddressFn: func(ctx context.Context, customerID, addressID int) error {
+			return nil
+		}}, "abc", "2", 400},
+		{"Invalid address ID", &FakeStore{SetDefaultAddressFn: func(ctx context.Context, customerID, addressID int) error {
+			return nil
+		}}, "1", "abc", 400},
+		{"Address not found", &FakeStore{SetDefaultAddressFn: func(ctx context.Context, customerID, addressID int) error {
+			return sql.ErrNoRows
+		}}, "1", "99", 404},
+		{"DB error", &FakeStore{SetDefaultAddressFn: func(ctx context.Context, customerID, addressID int) error {
+			return errors.New("internal server error")
+		}}, "1", "2", 500},
+	}
+
+	for _, e := range tests {
+		t.Run(e.name, func(t *testing.T) {
+			req := httptest.NewRequest("PATCH", "/customers/{customerID}/addresses/{addressID}/default", nil)
+			w := httptest.NewRecorder()
+
+			req.SetPathValue("customerID", e.customerID)
+			req.SetPathValue("addressID", e.addressID)
+
+			handler := SetDefaultAddressHandler(e.store)
 			handler(w, req)
 
 			if w.Code != e.want {

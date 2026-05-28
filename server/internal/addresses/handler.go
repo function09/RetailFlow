@@ -3,6 +3,7 @@ package addresses
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -127,6 +128,36 @@ func AddCustomerAddressHandler(store AddressStore) http.HandlerFunc {
 		w.WriteHeader(http.StatusCreated)
 
 		json.NewEncoder(w).Encode(aid)
+	}
+}
+
+func SetDefaultAddressHandler(store AddressStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cidString := r.PathValue("customerID")
+		cidInt, err := strconv.Atoi(cidString)
+		if err != nil {
+			http.Error(w, "Invalid customer ID", http.StatusBadRequest)
+			return
+		}
+
+		aidString := r.PathValue("addressID")
+		aidInt, err := strconv.Atoi(aidString)
+		if err != nil {
+			http.Error(w, "Invalid address ID", http.StatusBadRequest)
+			return
+		}
+
+		if err := store.SetDefaultAddress(r.Context(), cidInt, aidInt); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				http.Error(w, "Address not found", http.StatusNotFound)
+				return
+			}
+			slog.Error("failed to set default address", "customer_id", cidInt, "address_id", aidInt, "error", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 

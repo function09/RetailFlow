@@ -30,6 +30,7 @@ type AddressStore interface {
 	GetCustomerAddress(ctx context.Context, aid int) (*Address, error)
 	AddCustomerAddress(ctx context.Context, address *Address) (int, error)
 	RemoveCustomerAddress(ctx context.Context, aid int) error
+	SetDefaultAddress(ctx context.Context, customerID, addressID int) error
 }
 
 func (s *Store) GetCustomerAddresses(ctx context.Context, cid int) ([]*Address, error) {
@@ -69,6 +70,33 @@ func (s *Store) AddCustomerAddress(ctx context.Context, address *Address) (int, 
 	}
 
 	return addressID, nil
+}
+
+func (s *Store) SetDefaultAddress(ctx context.Context, customerID, addressID int) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err = tx.ExecContext(ctx, "UPDATE addresses SET is_default = false WHERE customer_id = $1", customerID); err != nil {
+		return err
+	}
+
+	result, err := tx.ExecContext(ctx, "UPDATE addresses SET is_default = true WHERE id = $1 AND customer_id = $2", addressID, customerID)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return tx.Commit()
 }
 
 func (s *Store) RemoveCustomerAddress(ctx context.Context, aid int) error {
