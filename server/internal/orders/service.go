@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/function09/order_management_system/server/db"
-	"github.com/function09/order_management_system/server/internal/addresses"
 	"github.com/function09/order_management_system/server/internal/products"
 )
 
@@ -40,19 +39,14 @@ type ProductStore interface {
 	UpdateProduct(ctx context.Context, p *products.Product) error
 }
 
-type AddressStore interface {
-	GetCustomerAddresses(ctx context.Context, cid int) ([]*addresses.Address, error)
-}
-
 type Service struct {
 	orderStore    OrderStore
 	productsStore ProductStore
-	addressStore  AddressStore
 	transactor    db.Transactor
 }
 
-func NewService(orderStore OrderStore, productStore ProductStore, addressStore AddressStore, transactor db.Transactor) *Service {
-	return &Service{orderStore: orderStore, productsStore: productStore, addressStore: addressStore, transactor: transactor}
+func NewService(orderStore OrderStore, productStore ProductStore, transactor db.Transactor) *Service {
+	return &Service{orderStore: orderStore, productsStore: productStore, transactor: transactor}
 }
 
 func (s *Service) GetOrderDetails(ctx context.Context, id int) (*OrderDetails, error) {
@@ -74,30 +68,8 @@ func (s *Service) GetOrderDetails(ctx context.Context, id int) (*OrderDetails, e
 func (s *Service) CreateOrder(ctx context.Context, so SalesOrderInput) (int, error) {
 	var createdID int
 	err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
-		if so.Address == nil {
-			addresses, err := s.addressStore.GetCustomerAddresses(ctx, so.CustomerID)
-
-			if err != nil {
-				return err
-			}
-
-			for _, address := range addresses {
-				newAddress := AddressInput{}
-				if address.IsDefault {
-					newAddress.StreetLine1 = address.StreetLine1
-					newAddress.StreetLine2 = address.StreetLine2
-					newAddress.City = address.City
-					newAddress.State = address.State
-					newAddress.ZipCode = address.ZipCode
-					so.Address = &newAddress
-					break
-				}
-			}
-			if so.Address == nil {
-				return fmt.Errorf("no default address assigned for CustomerID %d", so.CustomerID)
-
-			}
-
+		if so.Fulfillment == "shipping" && so.Address == nil {
+			return errors.New("address is required for shipping orders")
 		}
 
 		if len(so.OrderItems) == 0 {
@@ -128,11 +100,13 @@ func (s *Service) CreateOrder(ctx context.Context, so SalesOrderInput) (int, err
 			CustomerID:  so.CustomerID,
 			Status:      "pending",
 			Fulfillment: so.Fulfillment,
-			StreetLine1: so.Address.StreetLine1,
-			StreetLine2: so.Address.StreetLine2,
-			City:        so.Address.City,
-			State:       so.Address.State,
-			ZipCode:     so.Address.ZipCode,
+		}
+		if so.Address != nil {
+			newOrder.StreetLine1 = so.Address.StreetLine1
+			newOrder.StreetLine2 = so.Address.StreetLine2
+			newOrder.City = so.Address.City
+			newOrder.State = so.Address.State
+			newOrder.ZipCode = so.Address.ZipCode
 		}
 
 		orderID, err := s.orderStore.CreateOrder(ctx, &newOrder)
