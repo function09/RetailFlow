@@ -73,10 +73,41 @@ export interface OrderDetails {
   OrderItems: OrderItem[]
 }
 
+export interface OrderAddressInput {
+  street_line_1: string
+  street_line_2: string
+  city: string
+  state: string
+  zip_code: string
+}
+
 export interface CreateOrderPayload {
   customer_id: number
   fulfillment: string
   order_items: { product_id: number, quantity: number }[]
+  address: OrderAddressInput | null
+}
+
+export interface Address {
+  ID: number
+  StreetLine1: string
+  StreetLine2: string
+  City: string
+  State: string
+  ZipCode: string
+  AddressType: string
+  IsDefault: boolean
+  CustomerID: number
+}
+
+export interface AddressInput {
+  StreetLine1: string
+  StreetLine2: string
+  City: string
+  State: string
+  ZipCode: string
+  AddressType: string
+  IsDefault: boolean
 }
 
 
