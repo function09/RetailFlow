@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = async () => {
     try {
 
-      const response: Response = await fetch("http://localhost:8080/auth/me", {
+      const response: Response = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
