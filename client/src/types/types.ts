@@ -100,6 +100,17 @@ export interface Address {
   CustomerID: number
 }
 
+export interface TopProduct {
+  Name: string
+  TotalSold: number
+}
+
+export interface Metrics {
+  TotalRevenue: number
+  OrdersByStatus: Record<string, number>
+  TopProducts: TopProduct[]
+}
+
 export interface AddressInput {
   StreetLine1: string
   StreetLine2: string
