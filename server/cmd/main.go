@@ -15,6 +15,7 @@ import (
 	"github.com/function09/order_management_system/server/internal/auth"
 	"github.com/function09/order_management_system/server/internal/categories"
 	"github.com/function09/order_management_system/server/internal/customers"
+	"github.com/function09/order_management_system/server/internal/metrics"
 	"github.com/function09/order_management_system/server/internal/orders"
 	"github.com/function09/order_management_system/server/internal/products"
 	"github.com/function09/order_management_system/server/middleware"
@@ -23,7 +24,7 @@ import (
 
 func main() {
 	if err := godotenv.Load("../../.env"); err != nil {
-		log.Fatal(err)
+		log.Println("no .env file found, using environment variables")
 	}
 
 	cfg := config.LoadConfig()
@@ -47,6 +48,7 @@ func main() {
 	productsStore := products.NewStore(dbGetter)
 	categoriesStore := categories.NewStore(dbGetter)
 	orderStore := orders.NewStore(dbGetter)
+	metricsStore := metrics.NewStore(dbGetter)
 
 	ordersService := orders.NewService(orderStore, productsStore, transactor)
 	customerService := customers.NewService(customerStore, orderStore, transactor)
@@ -88,6 +90,9 @@ func main() {
 	mux.HandleFunc("POST /orders", middleware.AuthMiddleware(cfg.JWTSecret, orders.CreateOrderHandler(ordersService)))
 	mux.HandleFunc("PATCH /orders/{id}/status", middleware.AuthMiddleware(cfg.JWTSecret, orders.UpdateOrderStatusHandler(orderStore)))
 	mux.HandleFunc("GET /orders/{id}/details", middleware.AuthMiddleware(cfg.JWTSecret, orders.GetOrderDetailsHandler(ordersService)))
+
+	// Metrics
+	mux.HandleFunc("GET /metrics", middleware.AuthMiddleware(cfg.JWTSecret, metrics.GetAllMetricsHandler(metricsStore)))
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
