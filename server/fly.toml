@@ -8,6 +8,9 @@ primary_region = 'iad'
 
 [build]
 
+[deploy]
+  release_command = "/bin/sh -c '/usr/local/app/migrate -path /usr/local/app/db/migrations -database $DATABASE_URL up'"
+
 [http_service]
   internal_port = 8080
   force_https = true
