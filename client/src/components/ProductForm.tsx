@@ -2,7 +2,6 @@ import { createProduct, updateProduct } from "@/api/products"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ProductFormProps, Products } from "@/types/types"
 import { useMutation } from "@tanstack/react-query"
 import { useState } from "react"
@@ -53,19 +52,18 @@ function ProductForm({ categories, product, onSuccess }: ProductFormProps) {
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label>Category</Label>
-        <Select value={formData.CategoryID === 0 ? "" : String(formData.CategoryID)} onValueChange={value => setFormData({ ...formData, CategoryID: Number(value) })}>
-          <SelectTrigger className="max-w-xs">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {categories.map(cat =>
-                <SelectItem key={cat.ID} value={String(cat.ID)}>{cat.Category}</SelectItem>
-              )}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <Label htmlFor="category">Category</Label>
+        <select
+          id="category"
+          value={formData.CategoryID === 0 ? "" : String(formData.CategoryID)}
+          onChange={e => setFormData({ ...formData, CategoryID: Number(e.target.value) })}
+          className="max-w-xs h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          <option value="" disabled>Select a category</option>
+          {categories.map(cat =>
+            <option key={cat.ID} value={String(cat.ID)}>{cat.Category}</option>
+          )}
+        </select>
       </div>
       <div className="pt-2">
         <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
