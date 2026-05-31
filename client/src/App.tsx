@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Routes, Route } from 'react-router'
+import { Routes, Route, Navigate } from 'react-router'
 import Login from './pages/Login'
 import { Toaster } from 'sonner'
 import { AuthProvider } from './context/AuthContext'
@@ -25,6 +25,7 @@ function App() {
         <AuthProvider>
           <TooltipProvider>
             <Routes>
+              <Route path="/" element={< Navigate to="/login" />} />
               <Route path="/login" element={<Login />} />
 
               <Route element={<ProtectedRoute />}>
