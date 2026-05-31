@@ -105,7 +105,7 @@ func LoginUserHandler(store AuthStore, secret string) http.HandlerFunc {
 			Value:    token,
 			HttpOnly: true,
 			Path:     "/",
-			SameSite: http.SameSiteStrictMode,
+			SameSite: http.SameSiteNoneMode,
 			Secure:   true,
 		})
 
@@ -128,7 +128,13 @@ func Me() http.HandlerFunc {
 }
 
 func LogOutHandler(w http.ResponseWriter, r *http.Request) {
-	http.SetCookie(w, &http.Cookie{Name: "__Secure-token", MaxAge: -1, Path: "/"})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "__Secure-token",
+		MaxAge:   -1,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
+	})
 	w.WriteHeader(http.StatusOK)
-
 }
