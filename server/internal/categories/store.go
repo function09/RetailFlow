@@ -21,6 +21,7 @@ func NewStore(dbGetter db.DBGetter) *Store {
 
 type CategoriesStore interface {
 	GetAllCategories(ctx context.Context) ([]*Categories, error)
+	CreateCategory(ctx context.Context, name string) (*Categories, error)
 }
 
 func (s *Store) GetAllCategories(ctx context.Context) ([]*Categories, error) {
@@ -45,4 +46,16 @@ func (s *Store) GetAllCategories(ctx context.Context) ([]*Categories, error) {
 	}
 
 	return categories, nil
+}
+
+func (s *Store) CreateCategory(ctx context.Context, name string) (*Categories, error) {
+	query := "INSERT INTO categories (category) VALUES ($1) RETURNING id, category"
+
+	var cat Categories
+	err := s.dbGetter(ctx).QueryRowContext(ctx, query, name).Scan(&cat.ID, &cat.Category)
+	if err != nil {
+		return nil, err
+	}
+
+	return &cat, nil
 }

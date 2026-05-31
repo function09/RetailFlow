@@ -68,6 +68,7 @@ func main() {
 
 	// Categories
 	mux.HandleFunc("GET /categories", middleware.AuthMiddleware(cfg.JWTSecret, categories.GetAllCategoriesHandler(categoriesStore)))
+	mux.HandleFunc("POST /categories", middleware.AuthMiddleware(cfg.JWTSecret, categories.CreateCategoryHandler(categoriesStore)))
 
 	// Customers
 	mux.HandleFunc("GET /customers", middleware.AuthMiddleware(cfg.JWTSecret, customers.GetAllCustomersHandler(customerStore)))
