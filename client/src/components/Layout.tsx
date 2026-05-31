@@ -78,8 +78,13 @@ export default function Layout() {
           </DropdownMenu>
         </SidebarFooter>
       </Sidebar>
-      <main className="flex-1 p-6 overflow-auto">
-        <Outlet />
+      <main className="flex-1 overflow-auto">
+        <div className="flex items-center px-4 py-3 md:hidden">
+          <SidebarTrigger />
+        </div>
+        <div className="p-6">
+          <Outlet />
+        </div>
       </main>
     </div>
   )
