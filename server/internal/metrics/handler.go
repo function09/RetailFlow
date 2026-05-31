@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 )
 
@@ -11,6 +12,7 @@ func GetAllMetricsHandler(store MetricsStore) http.HandlerFunc {
 		metrics, err := store.GetAllMetrics(r.Context())
 
 		if err != nil {
+			slog.Error("error getting metrics", "err", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}

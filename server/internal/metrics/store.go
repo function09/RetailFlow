@@ -8,11 +8,11 @@ import (
 
 type TopProduct struct {
 	Name      string
-	TotalSold int
+	TotalSold int64
 }
 
 type Metrics struct {
-	TotalRevenue   int
+	TotalRevenue   int64
 	OrdersByStatus map[string]int
 	TopProducts    []*TopProduct
 }
@@ -32,7 +32,7 @@ type MetricsStore interface {
 func (s *Store) GetAllMetrics(ctx context.Context) (*Metrics, error) {
 	var metrics Metrics
 
-	totalRevenueQuery := "SELECT COALESCE(SUM(price*quantity), 0) FROM order_items"
+	totalRevenueQuery := "SELECT COALESCE(SUM(CAST(price AS BIGINT)*quantity), 0) FROM order_items"
 
 	if err := s.dbGetter(ctx).QueryRowContext(ctx, totalRevenueQuery).Scan(&metrics.TotalRevenue); err != nil {
 		return nil, err
